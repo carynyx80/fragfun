@@ -1,0 +1,118 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* Fragfun brand tokens. Black-first; neon green only for primary actions. */
+:root {
+  --ff-bg: #050505;
+  --ff-bg-2: #101010;
+  --ff-card: #151515;
+  --ff-text: #ffffff;
+  --ff-muted: #969696;
+  --ff-green: #8bff16;
+  --ff-border: #262626;
+  --ff-red: #ff4d57;
+
+  --background: var(--ff-bg);
+  --foreground: var(--ff-text);
+  --card: var(--ff-card);
+  --card-foreground: var(--ff-text);
+  --popover: var(--ff-bg-2);
+  --popover-foreground: var(--ff-text);
+  --primary: var(--ff-green);
+  --primary-foreground: #050505;
+  --secondary: #1c1c1c;
+  --secondary-foreground: var(--ff-text);
+  --muted: #1a1a1a;
+  --muted-foreground: var(--ff-muted);
+  --accent: #1c1c1c;
+  --accent-foreground: var(--ff-text);
+  --destructive: var(--ff-red);
+  --border: var(--ff-border);
+  --input: var(--ff-border);
+  --ring: var(--ff-green);
+  --radius: 0.75rem;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-geist-sans);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-ff-bg: var(--ff-bg);
+  --color-ff-bg2: var(--ff-bg-2);
+  --color-ff-card: var(--ff-card);
+  --color-ff-muted: var(--ff-muted);
+  --color-ff-green: var(--ff-green);
+  --color-ff-border: var(--ff-border);
+  --color-ff-red: var(--ff-red);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply font-sans;
+    background: var(--ff-bg);
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    overflow-x: hidden;
+  }
+  ::selection {
+    background: var(--ff-green);
+    color: #050505;
+  }
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+/* Wallet adapter modal, restyled to the brand. */
+.wallet-adapter-modal-wrapper {
+  background: var(--ff-bg-2) !important;
+  border: 1px solid var(--ff-border) !important;
+  border-radius: 16px !important;
+  font-family: var(--font-geist-sans) !important;
+}
+.wallet-adapter-modal-title {
+  font-size: 18px !important;
+  font-weight: 600 !important;
+}
+.wallet-adapter-button {
+  font-family: var(--font-geist-sans) !important;
+  border-radius: 12px !important;
+}
+.wallet-adapter-modal-list .wallet-adapter-button:hover {
+  background: #1c1c1c !important;
+}
