@@ -8,6 +8,7 @@ import "@solana/wallet-adapter-react-ui/styles.css";
 import { Toaster } from "sonner";
 import { publicEnv } from "@/lib/public-env";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { WalletSession } from "./wallet-session";
 
 export function Providers({ children }: { children: ReactNode }) {
   const [queryClient] = useState(
@@ -25,6 +26,7 @@ export function Providers({ children }: { children: ReactNode }) {
           <WalletModalProvider>
             <TooltipProvider>
               {children}
+              <WalletSession />
               <Toaster
                 theme="dark"
                 position="bottom-right"

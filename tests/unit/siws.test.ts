@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import nacl from "tweetnacl";
 import bs58 from "bs58";
-import { Keypair } from "@solana/web3.js";
-import { buildSignInMessage, checkSignIn, isValidWalletAddress, parseSignInMessage } from "@/lib/auth/siws";
+import { Keypair, PublicKey, SystemProgram, Transaction, TransactionInstruction } from "@solana/web3.js";
+import { MEMO_PROGRAM_ID, SIGN_IN_BLOCKHASH, buildSignInMessage, checkSignIn, isValidWalletAddress, parseSignInMessage } from "@/lib/auth/siws";
 
 function signed(overrides: Partial<Parameters<typeof buildSignInMessage>[0]> = {}, signer = Keypair.generate()) {
   const now = new Date();
@@ -84,5 +84,50 @@ describe("Sign-In With Solana", () => {
     expect(isValidWalletAddress(Keypair.generate().publicKey.toBase58())).toBe(true);
     expect(isValidWalletAddress("not-a-wallet")).toBe(false);
     expect(isValidWalletAddress("")).toBe(false);
+  });
+});
+
+describe("Sign-in by Memo transaction (wallets without signMessage)", () => {
+  const base = { expectedDomain: "localhost:3000", expectedNetwork: "devnet" };
+  function memoTx(message: string, signer: Keypair, opts: { blockhash?: string; extra?: boolean; feePayer?: Keypair; program?: PublicKey } = {}) {
+    const payer = opts.feePayer ?? signer;
+    const tx = new Transaction({ feePayer: payer.publicKey, recentBlockhash: opts.blockhash ?? SIGN_IN_BLOCKHASH }).add(
+      new TransactionInstruction({
+        programId: opts.program ?? new PublicKey(MEMO_PROGRAM_ID),
+        keys: [{ pubkey: signer.publicKey, isSigner: true, isWritable: false }],
+        data: Buffer.from(message, "utf8"),
+      }),
+    );
+    if (opts.extra) tx.add(SystemProgram.transfer({ fromPubkey: signer.publicKey, toPubkey: Keypair.generate().publicKey, lamports: 1 }));
+    tx.sign(...(payer === signer ? [signer] : [payer, signer]));
+    return tx.serialize().toString("base64");
+  }
+
+  it("accepts a valid signed memo transaction", () => {
+    const { message, wallet, signer } = signed();
+    expect(checkSignIn({ ...base, message, wallet, transaction: memoTx(message, signer) }).ok).toBe(true);
+  });
+  it("rejects a memo with different text", () => {
+    const { message, wallet, signer } = signed();
+    expect(checkSignIn({ ...base, message, wallet, transaction: memoTx(message + "x", signer) }).ok).toBe(false);
+  });
+  it("rejects a real blockhash (sendable transaction)", () => {
+    const { message, wallet, signer } = signed();
+    const tx = memoTx(message, signer, { blockhash: Keypair.generate().publicKey.toBase58() });
+    expect(checkSignIn({ ...base, message, wallet, transaction: tx }).ok).toBe(false);
+  });
+  it("rejects extra instructions such as a transfer", () => {
+    const { message, wallet, signer } = signed();
+    expect(checkSignIn({ ...base, message, wallet, transaction: memoTx(message, signer, { extra: true }) }).ok).toBe(false);
+  });
+  it("rejects another fee payer or another program", () => {
+    const { message, wallet, signer } = signed();
+    expect(checkSignIn({ ...base, message, wallet, transaction: memoTx(message, signer, { feePayer: Keypair.generate() }) }).ok).toBe(false);
+    expect(checkSignIn({ ...base, message, wallet, transaction: memoTx(message, signer, { program: Keypair.generate().publicKey }) }).ok).toBe(false);
+  });
+  it("rejects a transaction signed by a different wallet", () => {
+    const { message, wallet } = signed();
+    const other = Keypair.generate();
+    expect(checkSignIn({ ...base, message, wallet, transaction: memoTx(message, other) }).ok).toBe(false);
   });
 });

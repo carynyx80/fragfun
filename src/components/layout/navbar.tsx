@@ -15,6 +15,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuGroup,
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -76,7 +77,9 @@ function Notifications() {
         {!!data?.unread && <span className="absolute right-2 top-2 size-2 rounded-full bg-ff-green" />}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-80">
-        <DropdownMenuLabel>Notifications</DropdownMenuLabel>
+        <DropdownMenuGroup>
+          <DropdownMenuLabel>Notifications</DropdownMenuLabel>
+        </DropdownMenuGroup>
         {!data?.items.length && <p className="px-2 py-6 text-center text-sm text-ff-muted">Nothing yet.</p>}
         {data?.items.map((n) => (
           <DropdownMenuItem key={n.id} onClick={() => n.href && router.push(n.href)} className="flex flex-col items-start gap-0.5 py-2">

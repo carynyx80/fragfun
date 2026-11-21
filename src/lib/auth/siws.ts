@@ -3,7 +3,7 @@
  */
 import nacl from "tweetnacl";
 import bs58 from "bs58";
-import { PublicKey } from "@solana/web3.js";
+import { PublicKey, Transaction } from "@solana/web3.js";
 
 export interface SignInFields {
   domain: string;
@@ -67,6 +67,40 @@ export function verifyWalletSignature(message: string, signatureBase58: string, 
   }
 }
 
+/** SPL Memo program (v2). */
+export const MEMO_PROGRAM_ID = "MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr";
+/**
+ * Placeholder blockhash for sign-in transactions. It is not a real blockhash, so the network can never
+ * accept the transaction: it cannot be broadcast, cannot move funds and can never cost a fee.
+ */
+export const SIGN_IN_BLOCKHASH = "11111111111111111111111111111111";
+
+/**
+ * Fallback for wallets that cannot sign messages (e.g. Ledger-backed accounts): the wallet signs a
+ * transaction whose only instruction is a Memo containing the exact sign-in message. Accepted only if it
+ * has exactly that one instruction, the wallet as fee payer, the placeholder blockhash and a valid
+ * signature from the wallet.
+ */
+export function verifySignInTransaction(message: string, transactionBase64: string, wallet: string): boolean {
+  try {
+    const raw = Buffer.from(transactionBase64, "base64");
+    if (raw.length === 0 || raw.length > 1232) return false;
+    const tx = Transaction.from(raw);
+    if (!tx.feePayer || tx.feePayer.toBase58() !== wallet) return false;
+    if (tx.recentBlockhash !== SIGN_IN_BLOCKHASH) return false;
+    if (tx.instructions.length !== 1) return false;
+    const ix = tx.instructions[0];
+    if (ix.programId.toBase58() !== MEMO_PROGRAM_ID) return false;
+    if (ix.keys.some((k) => k.pubkey.toBase58() !== wallet)) return false;
+    if (Buffer.from(ix.data).toString("utf8") !== message) return false;
+    const entry = tx.signatures.find((s) => s.publicKey.toBase58() === wallet);
+    if (!entry?.signature || entry.signature.length !== 64) return false;
+    return nacl.sign.detached.verify(tx.serializeMessage(), entry.signature, new PublicKey(wallet).toBytes());
+  } catch {
+    return false;
+  }
+}
+
 export type VerifyFailure =
   | "malformed_message"
   | "wallet_mismatch"
@@ -78,7 +112,10 @@ export type VerifyFailure =
 /** Checks everything that can be checked without the database (nonce lookup is done by the caller). */
 export function checkSignIn(opts: {
   message: string;
-  signature: string;
+  /** Base58 ed25519 signature of the message (wallets with signMessage). */
+  signature?: string;
+  /** Base64 signed Memo transaction (fallback for wallets without signMessage). */
+  transaction?: string;
   wallet: string;
   expectedDomain: string;
   expectedNetwork: string;
@@ -92,6 +129,11 @@ export function checkSignIn(opts: {
   const now = opts.now ?? new Date();
   if (Number.isNaN(Date.parse(fields.expirationTime)) || new Date(fields.expirationTime) <= now)
     return { ok: false, reason: "expired" };
-  if (!verifyWalletSignature(opts.message, opts.signature, opts.wallet)) return { ok: false, reason: "bad_signature" };
+  const valid = opts.signature
+    ? verifyWalletSignature(opts.message, opts.signature, opts.wallet)
+    : opts.transaction
+      ? verifySignInTransaction(opts.message, opts.transaction, opts.wallet)
+      : false;
+  if (!valid) return { ok: false, reason: "bad_signature" };
   return { ok: true, fields };
 }

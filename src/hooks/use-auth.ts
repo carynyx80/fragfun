@@ -1,12 +1,63 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useWallet } from "@solana/wallet-adapter-react";
+import { WalletReadyState } from "@solana/wallet-adapter-base";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import bs58 from "bs58";
+import { PublicKey, Transaction, TransactionInstruction } from "@solana/web3.js";
 import { toast } from "sonner";
-import { api, friendlyWalletError } from "@/lib/client";
+import { api, friendlyWalletError, isUserRejection } from "@/lib/client";
+
+const MEMO_PROGRAM_ID = new PublicKey("MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr");
+/** Not a real blockhash: the sign-in transaction can never be broadcast or cost a fee. */
+const SIGN_IN_BLOCKHASH = "11111111111111111111111111111111";
+
+function toBase64(bytes: Uint8Array) {
+  let s = "";
+  for (const b of bytes) s += String.fromCharCode(b);
+  return btoa(s);
+}
+
+/** Memo-only transaction carrying the sign-in message. Placeholder blockhash: never sendable, never costs a fee. */
+function signInTransaction(pk: PublicKey, message: string) {
+  return new Transaction({ feePayer: pk, recentBlockhash: SIGN_IN_BLOCKHASH }).add(
+    new TransactionInstruction({
+      programId: MEMO_PROGRAM_ID,
+      keys: [{ pubkey: pk, isSigner: true, isWritable: false }],
+      // web3.js only bs58-encodes this field, so a Uint8Array works in the browser without a Buffer polyfill.
+      data: new TextEncoder().encode(message) as unknown as Buffer,
+    }),
+  );
+}
+
+// ---- Connect flow state shared by every useAuth() caller ----
+/** Set when the user starts connecting, so we ask for the sign-in signature right after the wallet connects. */
+let autoSignInRequested = false;
+export const autoSignInPending = () => autoSignInRequested;
+export const clearAutoSignIn = () => {
+  autoSignInRequested = false;
+};
+
+/** "Open in wallet app" sheet for phone browsers that have no wallet available (e.g. Safari on iPhone). */
+let mobileDialogOpen = false;
+const mobileListeners = new Set<() => void>();
+export function setMobileWalletDialog(open: boolean) {
+  mobileDialogOpen = open;
+  mobileListeners.forEach((l) => l());
+}
+export function useMobileWalletDialog() {
+  return useSyncExternalStore(
+    (l) => {
+      mobileListeners.add(l);
+      return () => mobileListeners.delete(l);
+    },
+    () => mobileDialogOpen,
+    () => false,
+  );
+}
+const isMobileBrowser = () => typeof navigator !== "undefined" && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
 export interface SessionInfo {
   id: string;
@@ -37,21 +88,66 @@ export function useAuth() {
   const connected = wallet.publicKey?.toBase58() ?? null;
   const mismatch = Boolean(user && connected && user.wallet !== connected);
 
+  const openWalletModal = useCallback(() => {
+    autoSignInRequested = true;
+    // Android exposes installed wallet apps through the Mobile Wallet Adapter; desktop and in-wallet browsers
+    // expose injected / Wallet Standard wallets. A phone browser with neither gets "open in wallet app" links.
+    const available = wallet.wallets.some(
+      (w) => w.readyState === WalletReadyState.Installed || w.adapter.name === "Mobile Wallet Adapter",
+    );
+    if (isMobileBrowser() && !available) setMobileWalletDialog(true);
+    else modal.setVisible(true);
+  }, [wallet.wallets, modal]);
+
   const signIn = useCallback(async () => {
+    clearAutoSignIn();
     if (!wallet.publicKey) {
-      modal.setVisible(true);
+      openWalletModal();
       return false;
     }
-    if (!wallet.signMessage) {
-      toast.error("This wallet does not support message signing. Try Phantom or Solflare.");
+    const canMessage = Boolean(wallet.signMessage);
+    const canTx = Boolean(wallet.signTransaction);
+    if (!canMessage && !canTx) {
+      toast.error("This wallet can't sign in. Try Phantom, Solflare or Backpack.");
       return false;
     }
     setSigningIn(true);
     try {
-      const addr = wallet.publicKey.toBase58();
+      const pk = wallet.publicKey;
+      const addr = pk.toBase58();
       const { message } = await api<{ message: string }>("/api/auth/nonce", { method: "POST", json: { wallet: addr } });
-      const sig = await wallet.signMessage(new TextEncoder().encode(message));
-      await api("/api/auth/verify", { method: "POST", json: { wallet: addr, message, signature: bs58.encode(sig) } });
+
+      // Fallback for wallets that cannot sign plain messages (e.g. Ledger-backed accounts): sign a Memo-only
+      // transaction with a placeholder blockhash. It is never sent, cannot move funds and costs nothing.
+      const signWithTransaction = async (msg: string) => {
+        const signed = await wallet.signTransaction!(signInTransaction(pk, msg));
+        return { transaction: toBase64(signed.serialize({ requireAllSignatures: true, verifySignatures: false })) };
+      };
+
+      let proof: { signature: string } | { transaction: string };
+      if (canMessage) {
+        try {
+          const sig = await wallet.signMessage!(new TextEncoder().encode(message));
+          proof = { signature: bs58.encode(sig) };
+        } catch (e) {
+          if (isUserRejection(e) || !canTx) throw e;
+          toast.message("Your wallet can't sign messages — approve the sign-in transaction instead. It is never sent and costs nothing.");
+          proof = await signWithTransaction(message);
+        }
+      } else {
+        toast.message("Approve the sign-in transaction in your wallet. It is never sent and costs nothing.");
+        proof = await signWithTransaction(message);
+      }
+      try {
+        await api("/api/auth/verify", { method: "POST", json: { wallet: addr, message, ...proof } });
+      } catch (e) {
+        // Some wallets alter or wrap signed messages; retry once with the transaction method.
+        if (!("signature" in proof) || !canTx || !(e instanceof Error) || !/verified/i.test(e.message)) throw e;
+        const { message: retryMessage } = await api<{ message: string }>("/api/auth/nonce", { method: "POST", json: { wallet: addr } });
+        toast.message("One more approval needed — this sign-in transaction is never sent and costs nothing.");
+        const retry = await signWithTransaction(retryMessage);
+        await api("/api/auth/verify", { method: "POST", json: { wallet: addr, message: retryMessage, ...retry } });
+      }
       await qc.invalidateQueries();
       toast.success("Signed in");
       return true;
@@ -61,7 +157,16 @@ export function useAuth() {
     } finally {
       setSigningIn(false);
     }
-  }, [wallet, modal, qc]);
+  }, [wallet, openWalletModal, qc]);
+
+  /** Disconnect the current wallet and let the user pick another one. */
+  const switchWallet = useCallback(async () => {
+    await api("/api/auth/logout", { method: "POST", json: {} }).catch(() => undefined);
+    await wallet.disconnect().catch(() => undefined);
+    wallet.select(null);
+    await qc.invalidateQueries({ queryKey: ["session"] });
+    openWalletModal();
+  }, [wallet, qc, openWalletModal]);
 
   const signOut = useCallback(async () => {
     await api("/api/auth/logout", { method: "POST", json: {} }).catch(() => undefined);
@@ -85,7 +190,8 @@ export function useAuth() {
     signingIn,
     signIn,
     signOut,
-    openWalletModal: () => modal.setVisible(true),
+    switchWallet,
+    openWalletModal,
     wallet,
   };
 }

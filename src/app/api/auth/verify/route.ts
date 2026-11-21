@@ -5,11 +5,14 @@ import { tx } from "@/lib/db";
 import { checkSignIn } from "@/lib/auth/siws";
 import { createSessionToken, setSessionCookie } from "@/lib/auth/session";
 
-const Body = z.object({
-  wallet: z.string().min(32).max(44),
-  message: z.string().min(10).max(2000),
-  signature: z.string().min(64).max(100),
-});
+const Body = z
+  .object({
+    wallet: z.string().min(32).max(44),
+    message: z.string().min(10).max(2000),
+    signature: z.string().min(64).max(100).optional(),
+    transaction: z.string().min(100).max(2000).optional(),
+  })
+  .refine((b) => Boolean(b.signature) !== Boolean(b.transaction), { message: "Provide a signature or a signed transaction." });
 
 const REASONS: Record<string, string> = {
   malformed_message: "The signed message was not recognised. Please try again.",
@@ -27,6 +30,7 @@ export const POST = route(async (req) => {
   const check = checkSignIn({
     message: body.message,
     signature: body.signature,
+    transaction: body.transaction,
     wallet: body.wallet,
     expectedDomain: host,
     expectedNetwork: env().SOLANA_NETWORK,

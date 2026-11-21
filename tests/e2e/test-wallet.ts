@@ -99,8 +99,15 @@ export async function installTestWallet(page: Page, kp: Keypair, opts: { rejectT
 export async function connectAndSignIn(page: Page) {
   await page.getByTestId("connect-wallet").first().click();
   await page.getByRole("button", { name: /Fragfun Test Wallet/ }).click();
-  await page.getByTestId("sign-in").first().click();
+  // Sign-in is requested automatically right after a user-initiated connect.
   await page.getByTestId("profile-menu").waitFor();
+  // Regression: opening the account and notification menus used to crash the page.
+  await page.getByTestId("profile-menu").click();
+  await page.getByRole("menuitem", { name: /My profile/ }).waitFor();
+  await page.keyboard.press("Escape");
+  await page.getByRole("button", { name: "Notifications" }).click();
+  await page.getByText("Notifications", { exact: true }).last().waitFor();
+  await page.keyboard.press("Escape");
 }
 
 /** Generates an original test clip (animated canvas → WebM) inside the browser. */
