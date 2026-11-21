@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/common/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { publicEnv } from "@/lib/public-env";
+import { PageHeader } from "@/components/common/empty-state";
 
 interface Profile {
   username: string | null;
@@ -74,19 +75,19 @@ function ProfileForm({ wallet, profile, onSaved }: { wallet: string; profile: Pr
       </div>
       <div className="space-y-1.5">
         <Label>Username</Label>
-        <Input value={f.username} onChange={(e) => setF({ ...f, username: e.target.value })} placeholder="letters, numbers, _" className="h-10 border-ff-border bg-ff-bg2" />
+        <Input value={f.username} onChange={(e) => setF({ ...f, username: e.target.value })} placeholder="letters, numbers, _" className="h-10 border-white/[0.08] bg-white/[0.03] focus-visible:border-white/25" />
       </div>
       <div className="space-y-1.5">
         <Label>Display name</Label>
-        <Input value={f.displayName} maxLength={48} onChange={(e) => setF({ ...f, displayName: e.target.value })} className="h-10 border-ff-border bg-ff-bg2" />
+        <Input value={f.displayName} maxLength={48} onChange={(e) => setF({ ...f, displayName: e.target.value })} className="h-10 border-white/[0.08] bg-white/[0.03] focus-visible:border-white/25" />
       </div>
       <div className="space-y-1.5">
         <Label>Bio</Label>
-        <Textarea value={f.bio} maxLength={280} onChange={(e) => setF({ ...f, bio: e.target.value })} className="border-ff-border bg-ff-bg2" />
+        <Textarea value={f.bio} maxLength={280} onChange={(e) => setF({ ...f, bio: e.target.value })} className="border-white/[0.08] bg-white/[0.03] focus-visible:border-white/25" />
       </div>
       <div className="space-y-1.5">
         <Label>X / Twitter handle</Label>
-        <Input value={f.twitter} maxLength={16} onChange={(e) => setF({ ...f, twitter: e.target.value })} placeholder="@handle" className="h-10 border-ff-border bg-ff-bg2" />
+        <Input value={f.twitter} maxLength={16} onChange={(e) => setF({ ...f, twitter: e.target.value })} placeholder="@handle" className="h-10 border-white/[0.08] bg-white/[0.03] focus-visible:border-white/25" />
       </div>
       <Button type="submit" disabled={saving} className="h-10 rounded-full px-5 font-semibold">
         {saving && <Loader2 className="animate-spin" />} Save profile
@@ -118,9 +119,9 @@ export default function SettingsPage() {
     );
 
   return (
-    <div className="mx-auto max-w-xl px-4 py-8">
-      <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
-      {q.isLoading || !q.data ? <Skeleton className="mt-6 h-80 rounded-2xl bg-ff-card" /> : <ProfileForm wallet={user.wallet} profile={q.data.profile} onSaved={() => void qc.invalidateQueries()} />}
+    <div className="mx-auto max-w-xl px-4 pb-8">
+      <PageHeader eyebrow="Account" title="Settings" className="pb-2" />
+      {q.isLoading || !q.data ? <Skeleton className="mt-6 h-80 rounded-2xl bg-white/[0.03]" /> : <ProfileForm wallet={user.wallet} profile={q.data.profile} onSaved={() => void qc.invalidateQueries()} />}
 
       <section className="mt-10 space-y-4 border-t border-ff-border pt-6">
         <h2 className="font-semibold">Preferences</h2>

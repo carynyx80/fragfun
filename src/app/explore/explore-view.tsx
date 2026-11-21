@@ -14,6 +14,7 @@ import { EmptyState, ErrorState } from "@/components/common/empty-state";
 import { Avatar } from "@/components/common/avatar";
 import { shortAddr } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { PageHeader } from "@/components/common/empty-state";
 
 const SORTS = [
   { key: "trending", label: "Trending" },
@@ -43,7 +44,7 @@ function SearchResults({ term }: { term: string }) {
           <h2 className="mb-3 font-semibold">Tokens</h2>
           <div className="flex flex-wrap gap-2">
             {d.tokens.map((t) => (
-              <Link key={t.mint} href={`/clip/${t.clipId}`} className="flex items-center gap-2 rounded-full border border-ff-border bg-ff-card py-1 pl-1 pr-3 text-sm hover:bg-[#1a1a1a]">
+              <Link key={t.mint} href={`/clip/${t.clipId}`} className="flex items-center gap-2 rounded-full border border-ff-border bg-white/[0.03] py-1 pl-1 pr-3 text-sm hover:bg-white/[0.04]">
                 <img src={t.imageUrl} alt="" className="size-7 rounded-full object-cover" />
                 <span className="font-semibold">${t.symbol}</span>
                 <span className="text-ff-muted">{t.name}</span>
@@ -57,7 +58,7 @@ function SearchResults({ term }: { term: string }) {
           <h2 className="mb-3 font-semibold">Creators</h2>
           <div className="flex flex-wrap gap-2">
             {d.creators.map((c) => (
-              <Link key={c.wallet} href={`/profile/${c.wallet}`} className="flex items-center gap-2 rounded-full border border-ff-border bg-ff-card py-1 pl-1 pr-3 text-sm hover:bg-[#1a1a1a]">
+              <Link key={c.wallet} href={`/profile/${c.wallet}`} className="flex items-center gap-2 rounded-full border border-ff-border bg-white/[0.03] py-1 pl-1 pr-3 text-sm hover:bg-white/[0.04]">
                 <Avatar wallet={c.wallet} url={c.avatarUrl} size={28} />
                 {c.displayName || (c.username ? `@${c.username}` : shortAddr(c.wallet))}
               </Link>
@@ -141,8 +142,7 @@ export function ExploreView() {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold tracking-tight">Explore</h1>
+      <PageHeader eyebrow="Discover" title="Explore" muted="the plays." className="pb-2">
         <div className="flex items-center gap-2">
           <form
             className="relative md:hidden"
@@ -152,18 +152,18 @@ export function ExploreView() {
             }}
           >
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ff-muted" />
-            <input value={input} onChange={(e) => setInput(e.target.value)} placeholder="Search" className="h-9 w-44 rounded-full border border-ff-border bg-ff-bg2 pl-9 pr-3 text-sm outline-none" />
+            <input value={input} onChange={(e) => setInput(e.target.value)} placeholder="Search" className="h-9 w-44 rounded-full border border-white/[0.08] bg-white/[0.03] focus-visible:border-white/25 pl-9 pr-3 text-sm outline-none" />
           </form>
-          <div className="flex rounded-full border border-ff-border p-0.5">
-            <button type="button" aria-label="Grid view" onClick={() => setMode("grid")} className={cn("rounded-full p-1.5", mode === "grid" && "bg-[#222]")}>
+          <div className="glass flex rounded-full p-1">
+            <button type="button" aria-label="Grid view" onClick={() => setMode("grid")} className={cn("rounded-full p-2 text-white/50 transition-colors", mode === "grid" && "bg-white text-black")}>
               <LayoutGrid className="size-4" />
             </button>
-            <button type="button" aria-label="Feed view" onClick={() => setMode("feed")} className={cn("rounded-full p-1.5", mode === "feed" && "bg-[#222]")}>
+            <button type="button" aria-label="Feed view" onClick={() => setMode("feed")} className={cn("rounded-full p-2 text-white/50 transition-colors", mode === "feed" && "bg-white text-black")}>
               <Smartphone className="size-4" />
             </button>
           </div>
         </div>
-      </div>
+      </PageHeader>
 
       {term ? (
         <div className="flex items-center gap-2 text-sm">
@@ -178,7 +178,7 @@ export function ExploreView() {
       ) : (
         <>
           <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4">
-            <button type="button" onClick={() => setParam("category", null)} className={cn("shrink-0 rounded-full border px-3 py-1.5 text-sm", !category ? "border-white" : "border-ff-border text-ff-muted")}>
+            <button type="button" onClick={() => setParam("category", null)} className={cn("shrink-0 rounded-full px-4 py-2 text-sm transition-colors", !category ? "bg-white font-medium text-black" : "btn-ghost text-white/65")}>
               All
             </button>
             {cats.data?.items.map((c) => (
@@ -186,16 +186,16 @@ export function ExploreView() {
                 key={c.slug}
                 type="button"
                 onClick={() => setParam("category", c.slug)}
-                className={cn("shrink-0 rounded-full border px-3 py-1.5 text-sm", category === c.slug ? "border-white" : "border-ff-border text-ff-muted hover:text-white")}
+                className={cn("shrink-0 rounded-full px-4 py-2 text-sm transition-colors", category === c.slug ? "bg-white font-medium text-black" : "btn-ghost text-white/65 hover:text-white")}
               >
                 {c.name}
               </button>
             ))}
           </div>
           {mode === "grid" && (
-            <div className="flex gap-4 border-b border-ff-border text-sm">
+            <div className="flex gap-6 border-b border-white/[0.07] text-sm">
               {SORTS.map((s) => (
-                <button key={s.key} type="button" onClick={() => setParam("sort", s.key)} className={cn("-mb-px border-b-2 pb-2", sort === s.key ? "border-ff-green text-white" : "border-transparent text-ff-muted")}>
+                <button key={s.key} type="button" onClick={() => setParam("sort", s.key)} className={cn("-mb-px border-b-2 pb-3 transition-colors", sort === s.key ? "border-ff-green text-white" : "border-transparent text-white/45 hover:text-white/80")}>
                   {s.label}
                 </button>
               ))}

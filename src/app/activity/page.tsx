@@ -11,6 +11,7 @@ import { explorerTxUrl } from "@/lib/public-env";
 import { shortAddr, timeAgo } from "@/lib/format";
 import { fromBaseUnits } from "@/lib/validation";
 import { cn } from "@/lib/utils";
+import { PageHeader } from "@/components/common/empty-state";
 
 interface Item {
   kind: "launch" | "trade";
@@ -30,14 +31,13 @@ interface Item {
 export default function ActivityPage() {
   const q = useQuery({ queryKey: ["activity"], queryFn: () => api<{ items: Item[] }>("/api/activity"), refetchInterval: 20_000 });
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8">
-      <h1 className="text-2xl font-bold tracking-tight">Activity</h1>
-      <p className="mt-1 text-sm text-ff-muted">Launches and trades made through Fragfun, each verified on Solana.</p>
-      <div className="mt-6">
+    <div className="mx-auto max-w-3xl px-4 pb-8">
+      <PageHeader eyebrow="Live feed" title="Activity" description="Launches and trades made through Fragfun, each one verified on Solana." />
+      <div>
         {q.isLoading ? (
           <div className="space-y-2">
             {Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton key={i} className="h-14 rounded-xl bg-ff-card" />
+              <Skeleton key={i} className="h-14 rounded-xl bg-white/[0.03]" />
             ))}
           </div>
         ) : q.isError ? (
@@ -45,10 +45,10 @@ export default function ActivityPage() {
         ) : !q.data!.items.length ? (
           <EmptyState title="No verified activity yet" body="No clips launched yet. Be the first to turn a gaming moment into a market." action={{ href: "/create", label: "Launch a clip" }} />
         ) : (
-          <ul className="divide-y divide-ff-border overflow-hidden rounded-2xl border border-ff-border bg-ff-card">
+          <ul className="surface divide-y divide-white/[0.05] overflow-hidden rounded-[24px]">
             {q.data!.items.map((i) => (
               <li key={`${i.kind}-${i.signature}`} className="flex items-center gap-3 px-4 py-3 text-sm">
-                <span className={cn("flex size-8 items-center justify-center rounded-lg", i.kind === "launch" ? "bg-ff-green text-black" : "bg-[#222]")}>
+                <span className={cn("flex size-8 items-center justify-center rounded-lg", i.kind === "launch" ? "bg-ff-green text-black" : "bg-white/10")}>
                   {i.kind === "launch" ? <Rocket className="size-4" /> : <ArrowLeftRight className="size-4" />}
                 </span>
                 <img src={i.image_url} alt="" className="size-8 rounded-lg object-cover" />

@@ -45,7 +45,7 @@ export function LikeButton({ clipId, initialLiked, initialCount, vertical }: { c
         }
       }}
     >
-      <span className={cn("flex size-10 items-center justify-center rounded-full bg-white/10 backdrop-blur", !vertical && "size-9 bg-ff-card")}>
+      <span className={cn("flex size-10 items-center justify-center rounded-full bg-white/10 backdrop-blur", !vertical && "size-9 bg-white/[0.03]")}>
         <Heart className={cn("size-[18px]", liked && "fill-ff-red text-ff-red")} />
       </span>
       {compact(Math.max(0, count))}
@@ -73,7 +73,7 @@ export function ShareButton({ clipId, title, vertical }: { clipId: string; title
         }
       }}
     >
-      <span className={cn("flex size-10 items-center justify-center rounded-full bg-white/10 backdrop-blur", !vertical && "size-9 bg-ff-card")}>
+      <span className={cn("flex size-10 items-center justify-center rounded-full bg-white/10 backdrop-blur", !vertical && "size-9 bg-white/[0.03]")}>
         <Share2 className="size-[18px]" />
       </span>
       Share
@@ -86,7 +86,7 @@ export function ReportButton({ targetType, targetId, vertical }: { targetType: "
   return (
     <>
       <button type="button" aria-label="Report" className={cn("flex items-center gap-1.5 text-sm", vertical && "flex-col gap-1 text-xs")} onClick={() => setOpen(true)}>
-        <span className={cn("flex size-10 items-center justify-center rounded-full bg-white/10 backdrop-blur", !vertical && "size-9 bg-ff-card")}>
+        <span className={cn("flex size-10 items-center justify-center rounded-full bg-white/10 backdrop-blur", !vertical && "size-9 bg-white/[0.03]")}>
           <Flag className="size-[18px]" />
         </span>
         Report

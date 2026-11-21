@@ -57,13 +57,13 @@ function Dashboard() {
   const d = useQuery({ queryKey: ["dashboard"], queryFn: () => api<Dashboard>("/api/profile") });
   const launches = useQuery({ queryKey: ["my-launches"], queryFn: () => api<{ items: LaunchItem[] }>("/api/launches"), refetchInterval: 15_000 });
   const [tab, setTab] = useState<"clips" | "launches" | "trades">("clips");
-  if (d.isLoading) return <Skeleton className="h-60 rounded-2xl bg-ff-card" />;
+  if (d.isLoading) return <Skeleton className="h-60 rounded-2xl bg-white/[0.03]" />;
   if (d.isError) return <ErrorState message="Could not load your dashboard." onRetry={() => void d.refetch()} />;
   const clips = d.data!.clips;
   const totalViews = clips.reduce((s, c) => s + c.viewCount, 0);
   const totalLikes = clips.reduce((s, c) => s + c.likeCount, 0);
   return (
-    <section className="rounded-2xl border border-ff-border bg-ff-card p-4 md:p-6">
+    <section className="surface rounded-[24px] p-4 md:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-lg font-semibold">Creator dashboard</h2>
         <div className="flex gap-4 text-sm text-ff-muted">
@@ -82,7 +82,7 @@ function Dashboard() {
         (clips.length === 0 ? (
           <EmptyState className="mt-4" title="No clips yet" body="Upload your first gaming moment." action={{ href: "/create", label: "Upload a clip" }} />
         ) : (
-          <ul className="mt-2 divide-y divide-ff-border">
+          <ul className="mt-2 divide-y divide-white/[0.05]">
             {clips.map((c) => (
               <li key={c.id} className="flex items-center gap-3 py-3">
                 {c.thumbnailUrl ? <img src={c.thumbnailUrl} alt="" className="h-14 w-10 rounded-md object-cover" /> : <span className="h-14 w-10 rounded-md bg-ff-bg2" />}
@@ -128,11 +128,11 @@ function Dashboard() {
         (!launches.data?.items.length ? (
           <p className="py-8 text-center text-sm text-ff-muted">No launches yet.</p>
         ) : (
-          <ul className="mt-2 divide-y divide-ff-border text-sm">
+          <ul className="mt-2 divide-y divide-white/[0.05] text-sm">
             {launches.data.items.map((l) => (
               <li key={l.attempt_id} className="flex flex-wrap items-center gap-3 py-3">
                 <span className="font-semibold">${l.symbol}</span>
-                <span className={cn("rounded-full px-2 py-0.5 text-xs", l.status === "confirmed" ? "bg-ff-green/15 text-ff-green" : l.status === "failed" ? "bg-ff-red/15 text-ff-red" : "bg-[#222] text-ff-muted")}>
+                <span className={cn("rounded-full px-2 py-0.5 text-xs", l.status === "confirmed" ? "bg-ff-green/15 text-ff-green" : l.status === "failed" ? "bg-ff-red/15 text-ff-red" : "bg-white/10 text-ff-muted")}>
                   {l.status.replace("_", " ")}
                 </span>
                 <span className="text-xs text-ff-muted">{timeAgo(l.created_at)}</span>
@@ -150,7 +150,7 @@ function Dashboard() {
         (!d.data!.trades.length ? (
           <p className="py-8 text-center text-sm text-ff-muted">No trades through Fragfun yet.</p>
         ) : (
-          <ul className="mt-2 divide-y divide-ff-border text-sm">
+          <ul className="mt-2 divide-y divide-white/[0.05] text-sm">
             {d.data!.trades.map((t) => (
               <li key={t.id} className="flex flex-wrap items-center gap-3 py-3">
                 <span className={cn("font-semibold uppercase", t.side === "buy" ? "text-ff-green" : "text-ff-red")}>{t.side}</span>
@@ -175,7 +175,7 @@ export function ProfileView({ wallet }: { wallet: string }) {
   const { user } = useAuth();
   const q = useQuery({ queryKey: ["profile", wallet], queryFn: () => api<ProfileResp>(`/api/profiles/${wallet}`) });
   const isOwner = user?.wallet === wallet;
-  if (q.isLoading) return <Skeleton className="h-40 rounded-2xl bg-ff-card" />;
+  if (q.isLoading) return <Skeleton className="h-40 rounded-2xl bg-white/[0.03]" />;
   if (q.isError) {
     if (q.error instanceof ClientApiError && q.error.status === 404) {
       if (isOwner) return <div className="space-y-6"><p className="text-ff-muted">Your profile is ready.</p><Dashboard /></div>;
@@ -220,7 +220,7 @@ export function ProfileView({ wallet }: { wallet: string }) {
             ["Views", profile.stats.views],
             ["Likes", profile.stats.likes],
           ].map(([k, v]) => (
-            <div key={k} className="rounded-xl border border-ff-border bg-ff-card px-3 py-2">
+            <div key={k} className="surface rounded-2xl px-3 py-2">
               <div className="font-semibold tabular-nums">{compact(v as number)}</div>
               <div className="text-[11px] text-ff-muted">{k}</div>
             </div>
@@ -246,7 +246,7 @@ export function ProfileView({ wallet }: { wallet: string }) {
           <h2 className="mb-3 font-semibold">Verified launches</h2>
           <div className="flex flex-wrap gap-2">
             {profile.launches.map((l) => (
-              <Link key={l.mint} href={`/clip/${l.clipId}`} className="flex items-center gap-2 rounded-full border border-ff-border bg-ff-card py-1 pl-1 pr-3 text-sm hover:bg-[#1a1a1a]">
+              <Link key={l.mint} href={`/clip/${l.clipId}`} className="flex items-center gap-2 rounded-full border border-ff-border bg-white/[0.03] py-1 pl-1 pr-3 text-sm hover:bg-white/[0.04]">
                 <img src={l.imageUrl} alt="" className="size-7 rounded-full object-cover" />
                 <span className="font-semibold">${l.symbol}</span>
                 <span className="text-xs text-ff-muted">{timeAgo(l.confirmedAt)}</span>

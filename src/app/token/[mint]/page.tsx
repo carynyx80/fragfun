@@ -27,7 +27,7 @@ async function TokenBody({ params }: { params: PageProps<"/token/[mint]">["param
     return <EmptyState title="Token not found on Fragfun" body="Only tokens launched through Fragfun and verified on-chain have pages here." action={{ href: "/explore", label: "Explore clips" }} />;
   return (
     <div className="mx-auto max-w-2xl space-y-4">
-      <Link href={`/clip/${t.clipId}`} className="block rounded-2xl border border-ff-border bg-ff-card px-4 py-3 text-sm hover:bg-[#1a1a1a]">
+      <Link href={`/clip/${t.clipId}`} className="block surface rounded-[24px] px-4 py-3 text-sm hover:bg-white/[0.04]">
         <span className="text-ff-muted">Source clip: </span>
         <span className="font-medium">{t.clipTitle}</span>
       </Link>
@@ -38,8 +38,8 @@ async function TokenBody({ params }: { params: PageProps<"/token/[mint]">["param
 
 export default function TokenPage({ params }: PageProps<"/token/[mint]">) {
   return (
-    <div className="mx-auto max-w-[1400px] px-4 py-6 lg:px-6">
-      <Suspense fallback={<Skeleton className="mx-auto h-[640px] max-w-2xl rounded-2xl bg-ff-card" />}>
+    <div className="mx-auto max-w-[1240px] px-4 py-6 lg:px-6">
+      <Suspense fallback={<Skeleton className="mx-auto h-[640px] max-w-2xl rounded-2xl bg-white/[0.03]" />}>
         <TokenBody params={params} />
       </Suspense>
     </div>

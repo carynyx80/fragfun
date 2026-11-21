@@ -56,12 +56,12 @@ export function PriceChart({ mint }: { mint: string }) {
   }, [candles]);
 
   return (
-    <div className="rounded-2xl border border-ff-border bg-ff-card p-3">
+    <div className="surface rounded-[24px] p-3">
       <div className="mb-2 flex items-center justify-between">
         <span className="text-xs text-ff-muted">Price (USD){q.data?.source ? " · GeckoTerminal" : ""}</span>
         <div className="flex gap-1">
           {TFS.map((t) => (
-            <button key={t} type="button" onClick={() => setTf(t)} className={cn("rounded-md px-2 py-0.5 text-xs", t === tf ? "bg-[#222] text-white" : "text-ff-muted hover:text-white")}>
+            <button key={t} type="button" onClick={() => setTf(t)} className={cn("rounded-md px-2 py-0.5 text-xs", t === tf ? "bg-white/10 text-white" : "text-ff-muted hover:text-white")}>
               {t}
             </button>
           ))}
@@ -70,7 +70,7 @@ export function PriceChart({ mint }: { mint: string }) {
       {q.isLoading ? (
         <Skeleton className="h-64 bg-ff-bg2" />
       ) : !candles?.length ? (
-        <div className="flex h-64 items-center justify-center rounded-xl bg-ff-bg2 px-6 text-center text-sm text-ff-muted">
+        <div className="flex h-64 items-center justify-center rounded-2xl bg-white/[0.035] px-6 text-center text-sm text-ff-muted">
           Chart data is not available yet. Market data providers usually index new tokens within a few minutes of their first trades.
         </div>
       ) : (

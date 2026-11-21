@@ -19,8 +19,8 @@ async function Body({ params }: { params: PageProps<"/profile/[wallet]">["params
 
 export default function ProfilePage({ params }: PageProps<"/profile/[wallet]">) {
   return (
-    <div className="mx-auto max-w-[1400px] px-4 py-8 lg:px-6">
-      <Suspense fallback={<Skeleton className="h-40 rounded-2xl bg-ff-card" />}>
+    <div className="mx-auto max-w-[1240px] px-4 py-8 lg:px-6">
+      <Suspense fallback={<Skeleton className="h-40 rounded-2xl bg-white/[0.03]" />}>
         <Body params={params} />
       </Suspense>
     </div>

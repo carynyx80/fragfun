@@ -45,7 +45,7 @@ export function useToken(mint: string | null | undefined) {
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl bg-ff-bg2 px-3 py-2.5">
+    <div className="rounded-2xl bg-white/[0.035] px-3 py-2.5">
       <div className="text-[11px] text-ff-muted">{label}</div>
       <div className="mt-0.5 text-sm font-semibold tabular-nums">{value}</div>
     </div>
@@ -59,7 +59,7 @@ function RecentTrades({ mint, symbol }: { mint: string; symbol: string }) {
     refetchInterval: 20_000,
   });
   return (
-    <div className="rounded-2xl border border-ff-border bg-ff-card">
+    <div className="surface rounded-[24px]">
       <div className="flex items-center justify-between px-4 py-3">
         <span className="text-sm font-medium">Recent trades</span>
         <span className="text-[11px] text-ff-muted">On-chain · GeckoTerminal</span>
@@ -73,7 +73,7 @@ function RecentTrades({ mint, symbol }: { mint: string; symbol: string }) {
       ) : !q.data?.trades?.length ? (
         <p className="px-4 pb-5 text-sm text-ff-muted">No trade data available yet.</p>
       ) : (
-        <ul className="max-h-80 divide-y divide-ff-border overflow-y-auto text-xs">
+        <ul className="max-h-80 divide-y divide-white/[0.05] overflow-y-auto text-xs">
           {q.data.trades.map((t) => (
             <li key={t.signature} className="grid grid-cols-[48px_1fr_1fr_64px] items-center gap-2 px-4 py-2">
               <span className={cn("font-semibold uppercase", t.side === "buy" ? "text-ff-green" : "text-ff-red")}>{t.side}</span>
@@ -94,12 +94,12 @@ function RecentTrades({ mint, symbol }: { mint: string; symbol: string }) {
 
 export function TokenMarket({ mint, compactHeader }: { mint: string; compactHeader?: boolean }) {
   const q = useToken(mint);
-  if (q.isLoading) return <Skeleton className="h-[640px] rounded-2xl bg-ff-card" />;
+  if (q.isLoading) return <Skeleton className="h-[640px] rounded-2xl bg-white/[0.03]" />;
   if (q.isError || !q.data) return <p className="rounded-2xl border border-ff-border p-6 text-sm text-ff-muted">Market data unavailable.</p>;
   const { token, market } = q.data;
   return (
     <div className="space-y-4">
-      <div className="rounded-2xl border border-ff-border bg-ff-card p-4">
+      <div className="surface rounded-[24px] p-4">
         <div className="flex items-center gap-3">
           <img src={token.imageUrl} alt="" className="size-12 rounded-xl object-cover" />
           <div className="min-w-0 flex-1">
@@ -152,7 +152,7 @@ export function TokenMarket({ mint, compactHeader }: { mint: string; compactHead
           ["Creator", token.creator.username ? `@${token.creator.username}` : shortAddr(token.creator.wallet, 6)],
           ["Data sources", market.sources.join(", ") || "—"],
         ].map(([k, v]) => (
-          <div key={k} className="bg-ff-card px-4 py-3">
+          <div key={k} className="bg-white/[0.03] px-4 py-3">
             <dt className="text-xs text-ff-muted">{k}</dt>
             <dd className="mt-0.5 truncate">{k === "Creator" ? <Link href={`/profile/${token.creator.wallet}`} className="hover:underline">{v}</Link> : v}</dd>
           </div>

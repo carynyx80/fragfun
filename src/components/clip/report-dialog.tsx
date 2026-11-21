@@ -35,7 +35,7 @@ export function ReportDialog({
   const [busy, setBusy] = useState(false);
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="border-ff-border bg-ff-bg2">
+      <DialogContent className="border-white/[0.08] bg-[#0b0b0b] rounded-[28px]">
         <DialogHeader>
           <DialogTitle>Report {targetType}</DialogTitle>
           <DialogDescription>Reports are reviewed by the Fragfun team. For copyright takedowns, include proof of ownership.</DialogDescription>

@@ -66,19 +66,26 @@ function Stepper({ step }: { step: Step }) {
   const idx = Math.min(STEPS.findIndex((s) => s.key === step), 3);
   const effective = step === "launching" || step === "done" ? 4 : idx;
   return (
-    <ol className="mb-8 mt-8 flex items-center gap-2 text-xs">
+    <ol className="glass mb-8 mt-6 grid grid-cols-4 gap-1 rounded-full p-1 text-xs">
       {STEPS.map((s, i) => (
-        <li key={s.key} className="flex flex-1 items-center gap-2">
+        <li
+          key={s.key}
+          className={cn(
+            "flex items-center justify-center gap-2 rounded-full py-2 transition-colors duration-300",
+            i === effective && "bg-white text-black",
+            i < effective && "text-white",
+            i > effective && "text-white/40",
+          )}
+        >
           <span
             className={cn(
-              "flex size-6 shrink-0 items-center justify-center rounded-full border text-[11px]",
-              i < effective ? "border-ff-green bg-ff-green text-black" : i === effective ? "border-white" : "border-ff-border text-ff-muted",
+              "flex size-5 shrink-0 items-center justify-center rounded-full font-mono text-[10px]",
+              i < effective ? "bg-ff-green text-black" : i === effective ? "bg-black text-white" : "bg-white/[0.07]",
             )}
           >
-            {i < effective ? <Check className="size-3.5" /> : i + 1}
+            {i < effective ? <Check className="size-3" /> : i + 1}
           </span>
-          <span className={cn("hidden sm:inline", i === effective ? "text-white" : "text-ff-muted")}>{s.label}</span>
-          {i < STEPS.length - 1 && <span className="h-px flex-1 bg-ff-border" />}
+          <span className="hidden font-medium sm:inline">{s.label}</span>
         </li>
       ))}
     </ol>
@@ -149,12 +156,13 @@ export function CreateFlow() {
   // ---------------------------------------------------------------- gates
   if (!connected || !user) {
     return (
-      <div className="mt-8 rounded-2xl border border-ff-border bg-ff-card p-8 text-center">
-        <p className="font-medium">Connect your Solana wallet to launch</p>
-        <p className="mx-auto mt-1 max-w-sm text-sm text-ff-muted">
+      <div className="surface relative mt-8 overflow-hidden rounded-[32px] px-8 py-14 text-center">
+        <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(50%_70%_at_50%_0%,rgba(139,255,22,0.09),transparent_70%)]" />
+        <p className="h-section relative text-3xl">Connect to launch.</p>
+        <p className="relative mx-auto mt-3 max-w-sm text-[15px] text-white/55">
           You&apos;ll sign a free message to prove you own the wallet. Fragfun never asks for your seed phrase or private key.
         </p>
-        <Button className="mt-5 h-10 rounded-full px-5 font-semibold" onClick={() => (connected ? void signIn() : openWalletModal())} disabled={signingIn}>
+        <Button className="relative mt-7 h-12 rounded-full px-6" onClick={() => (connected ? void signIn() : openWalletModal())} disabled={signingIn}>
           {signingIn && <Loader2 className="animate-spin" />}
           {connected ? "Sign in with wallet" : "Connect wallet"}
         </Button>
@@ -345,15 +353,15 @@ export function CreateFlow() {
           </div>
           <div className="space-y-4">
             {clip && clip.processingStatus !== "ready" && (
-              <p className="rounded-xl border border-ff-border bg-ff-card px-4 py-3 text-sm text-ff-muted">Status: {clip.processingStatus}. You can launch once it is ready.</p>
+              <p className="surface rounded-2xl px-4 py-3 text-sm text-ff-muted">Status: {clip.processingStatus}. You can launch once it is ready.</p>
             )}
             <div className="space-y-1.5">
               <Label htmlFor="title">Clip title</Label>
-              <Input id="title" value={title} maxLength={80} onChange={(e) => setTitle(e.target.value)} placeholder="Crazy highway jump" className="h-10 border-ff-border bg-ff-bg2" />
+              <Input id="title" value={title} maxLength={80} onChange={(e) => setTitle(e.target.value)} placeholder="Crazy highway jump" className="h-10 border-white/[0.08] bg-white/[0.03] focus-visible:border-white/25" />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="desc">Description</Label>
-              <Textarea id="desc" value={description} maxLength={500} onChange={(e) => setDescription(e.target.value)} placeholder="What happened in this moment?" className="min-h-24 border-ff-border bg-ff-bg2" />
+              <Textarea id="desc" value={description} maxLength={500} onChange={(e) => setDescription(e.target.value)} placeholder="What happened in this moment?" className="min-h-24 border-white/[0.08] bg-white/[0.03] focus-visible:border-white/25" />
             </div>
             <div className="space-y-1.5">
               <Label>Category</Label>
@@ -384,7 +392,7 @@ export function CreateFlow() {
 
       {step === "token" && (
         <div className="space-y-5">
-          <div className="flex items-center justify-between gap-3 rounded-2xl border border-ff-border bg-ff-card p-4">
+          <div className="flex items-center justify-between gap-3 surface rounded-[24px] p-4">
             <div>
               <p className="text-sm font-medium">Need ideas?</p>
               <p className="text-xs text-ff-muted">Optional AI suggestions. You stay in control and can edit everything.</p>
@@ -394,7 +402,7 @@ export function CreateFlow() {
             </Button>
           </div>
           {ai && (
-            <div className="space-y-3 rounded-2xl border border-ff-border bg-ff-bg2 p-4 text-sm">
+            <div className="space-y-3 rounded-[24px] border border-white/[0.07] bg-white/[0.025] p-4 text-sm">
               <div className="flex flex-wrap gap-2">
                 {ai.names.map((n) => (
                   <button key={n} type="button" onClick={() => setTName(n)} className="rounded-full border border-ff-border px-3 py-1 hover:border-white">
@@ -430,7 +438,7 @@ export function CreateFlow() {
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label htmlFor="tname">Token name</Label>
-              <Input id="tname" value={tName} maxLength={32} onChange={(e) => setTName(e.target.value)} placeholder="Crazy Highway Jump" className="h-10 border-ff-border bg-ff-bg2" data-testid="token-name" />
+              <Input id="tname" value={tName} maxLength={32} onChange={(e) => setTName(e.target.value)} placeholder="Crazy Highway Jump" className="h-10 border-white/[0.08] bg-white/[0.03] focus-visible:border-white/25" data-testid="token-name" />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="tsym">Ticker</Label>
@@ -440,14 +448,14 @@ export function CreateFlow() {
                 maxLength={11}
                 onChange={(e) => setTSymbol(e.target.value.toUpperCase())}
                 placeholder="$JUMP6"
-                className="h-10 border-ff-border bg-ff-bg2 font-semibold"
+                className="h-10 border-white/[0.08] bg-white/[0.03] focus-visible:border-white/25 font-semibold"
                 data-testid="token-symbol"
               />
             </div>
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="tdesc">Token description</Label>
-            <Textarea id="tdesc" value={tDesc} maxLength={500} onChange={(e) => setTDesc(e.target.value)} placeholder="The moment and the community behind it." className="min-h-20 border-ff-border bg-ff-bg2" />
+            <Textarea id="tdesc" value={tDesc} maxLength={500} onChange={(e) => setTDesc(e.target.value)} placeholder="The moment and the community behind it." className="min-h-20 border-white/[0.08] bg-white/[0.03] focus-visible:border-white/25" />
           </div>
           <div className="space-y-2">
             <Label>Token image</Label>
@@ -457,11 +465,11 @@ export function CreateFlow() {
                 onClick={() => setImageSource("thumbnail")}
                 className={cn("flex items-center gap-2 rounded-xl border p-2 pr-3 text-sm", imageSource === "thumbnail" ? "border-ff-green" : "border-ff-border")}
               >
-                {clip?.thumbnailUrl ? <img src={clip.thumbnailUrl} alt="" className="size-10 rounded-lg object-cover" /> : <span className="size-10 rounded-lg bg-ff-card" />}
+                {clip?.thumbnailUrl ? <img src={clip.thumbnailUrl} alt="" className="size-10 rounded-lg object-cover" /> : <span className="size-10 rounded-lg bg-white/[0.03]" />}
                 Clip thumbnail
               </button>
               <label className={cn("flex cursor-pointer items-center gap-2 rounded-xl border p-2 pr-3 text-sm", imageSource === "upload" ? "border-ff-green" : "border-ff-border")}>
-                {imageUrl ? <img src={imageUrl} alt="" className="size-10 rounded-lg object-cover" /> : <span className="flex size-10 items-center justify-center rounded-lg bg-ff-card text-xs text-ff-muted">+</span>}
+                {imageUrl ? <img src={imageUrl} alt="" className="size-10 rounded-lg object-cover" /> : <span className="flex size-10 items-center justify-center rounded-lg bg-white/[0.03] text-xs text-ff-muted">+</span>}
                 Upload image
                 <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" className="hidden" onChange={(e) => void uploadImage(e.target.files?.[0])} />
               </label>
@@ -475,13 +483,13 @@ export function CreateFlow() {
             ].map(([label, value, set, ph]) => (
               <div key={label as string} className="space-y-1.5">
                 <Label>{label as string} (optional)</Label>
-                <Input value={value as string} onChange={(e) => (set as (v: string) => void)(e.target.value)} placeholder={ph as string} className="h-10 border-ff-border bg-ff-bg2" />
+                <Input value={value as string} onChange={(e) => (set as (v: string) => void)(e.target.value)} placeholder={ph as string} className="h-10 border-white/[0.08] bg-white/[0.03] focus-visible:border-white/25" />
               </div>
             ))}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="devbuy">Initial buy (optional, SOL)</Label>
-            <Input id="devbuy" inputMode="decimal" value={devBuy} onChange={(e) => setDevBuy(e.target.value.replace(/[^0-9.]/g, ""))} className="h-10 w-40 border-ff-border bg-ff-bg2" />
+            <Input id="devbuy" inputMode="decimal" value={devBuy} onChange={(e) => setDevBuy(e.target.value.replace(/[^0-9.]/g, ""))} className="h-10 w-40 border-white/[0.08] bg-white/[0.03] focus-visible:border-white/25" />
             <p className="text-xs text-ff-muted">Buy some of your own token in the launch transaction. Leave at 0 to only create it.</p>
           </div>
           {formError && <p className="text-sm text-ff-red">{formError}</p>}
@@ -498,7 +506,7 @@ export function CreateFlow() {
 
       {(step === "review" || step === "launching") && (
         <div className="space-y-5">
-          <div className="flex gap-4 rounded-2xl border border-ff-border bg-ff-card p-4">
+          <div className="flex gap-4 surface rounded-[24px] p-4">
             <img
               src={imageSource === "upload" ? (imageUrl ?? "") : (clip?.thumbnailUrl ?? "")}
               alt=""
@@ -533,7 +541,7 @@ export function CreateFlow() {
               ["Your wallet balance", prepared?.preview ? sol(prepared.preview.walletBalanceLamports / 1e9) : "—"],
               ["Mint address", prepared?.mint ? shortAddr(prepared.mint, 6) : "Generated when prepared"],
             ].map(([k, v]) => (
-              <div key={k} className="bg-ff-card px-4 py-3">
+              <div key={k} className="bg-white/[0.03] px-4 py-3">
                 <dt className="text-xs text-ff-muted">{k}</dt>
                 <dd className="mt-0.5 font-medium">{v}</dd>
               </div>
@@ -545,7 +553,7 @@ export function CreateFlow() {
           </p>
 
           {prepared?.preview && (
-            <div className="flex items-start gap-2 rounded-xl border border-ff-border bg-ff-bg2 px-4 py-3 text-xs text-ff-muted">
+            <div className="flex items-start gap-2 rounded-2xl border border-white/[0.07] bg-white/[0.025] px-4 py-3 text-xs text-ff-muted">
               <ShieldCheck className="mt-0.5 size-4 shrink-0 text-ff-green" />
               <span>
                 Transaction simulated successfully. It only calls: Compute Budget, Associated Token Account and Pump.fun programs. Your wallet will
@@ -571,7 +579,7 @@ export function CreateFlow() {
           )}
 
           {step === "launching" && (
-            <div className="flex items-center gap-3 rounded-xl border border-ff-border bg-ff-card px-4 py-4 text-sm">
+            <div className="flex items-center gap-3 surface rounded-2xl px-4 py-4 text-sm">
               <Loader2 className="size-4 animate-spin" />
               <div>
                 <p className="font-medium">
@@ -606,7 +614,7 @@ export function CreateFlow() {
       )}
 
       {step === "done" && attempt?.mint && (
-        <div className="rounded-3xl border border-ff-green/40 bg-ff-card p-8 text-center" data-testid="launch-success">
+        <div className="surface rounded-[32px] border-ff-green/40 p-8 text-center" data-testid="launch-success">
           <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-ff-green text-black">
             <Check className="size-6" />
           </div>
@@ -615,7 +623,7 @@ export function CreateFlow() {
             {attempt.name} <span className="font-semibold text-white">${attempt.symbol}</span>
           </p>
           <div className="mx-auto mt-5 max-w-md space-y-2 text-left text-sm">
-            <div className="flex items-center justify-between gap-2 rounded-xl border border-ff-border bg-ff-bg2 px-3 py-2">
+            <div className="flex items-center justify-between gap-2 rounded-2xl border border-white/[0.07] bg-white/[0.025] px-3 py-2">
               <span className="text-ff-muted">Mint</span>
               <button
                 type="button"
@@ -629,7 +637,7 @@ export function CreateFlow() {
               </button>
             </div>
             {attempt.signature && (
-              <a href={explorerTxUrl(attempt.signature)} target="_blank" rel="noreferrer" className="flex items-center justify-between rounded-xl border border-ff-border bg-ff-bg2 px-3 py-2">
+              <a href={explorerTxUrl(attempt.signature)} target="_blank" rel="noreferrer" className="flex items-center justify-between rounded-2xl border border-white/[0.07] bg-white/[0.025] px-3 py-2">
                 <span className="text-ff-muted">Transaction</span>
                 <span className="flex items-center gap-1 font-mono text-xs">
                   {shortAddr(attempt.signature, 8)} <ExternalLink className="size-3" />

@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Bricolage_Grotesque, Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers/providers";
 import { Navbar, MobileNav } from "@/components/layout/navbar";
@@ -9,6 +9,7 @@ import { Logo } from "@/components/layout/logo";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
+const display = Bricolage_Grotesque({ variable: "--font-display", subsets: ["latin"], axes: ["wdth"] });
 
 const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
@@ -30,7 +31,7 @@ export const viewport: Viewport = { themeColor: "#050505", width: "device-width"
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} dark`}>
+    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} ${display.variable} dark`}>
       <body className="flex min-h-dvh flex-col">
         <Providers>
           <Suspense fallback={<StaticHeader />}>
@@ -51,7 +52,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
 function StaticHeader() {
   return (
     <header className="sticky top-0 z-40 border-b border-ff-border bg-ff-bg/85 backdrop-blur-md">
-      <div className="mx-auto flex h-14 max-w-[1400px] items-center px-4 lg:px-6">
+      <div className="mx-auto mt-3 flex h-14 max-w-[1240px] items-center px-7 lg:px-9">
         <Logo />
       </div>
     </header>

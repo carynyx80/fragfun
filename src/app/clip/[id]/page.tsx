@@ -31,12 +31,12 @@ async function Loader({ params }: { params: PageProps<"/clip/[id]">["params"] })
 
 export default function ClipPage({ params }: PageProps<"/clip/[id]">) {
   return (
-    <div className="mx-auto max-w-[1400px] px-4 py-6 lg:px-6">
+    <div className="mx-auto max-w-[1240px] px-4 py-6 lg:px-6">
       <Suspense
         fallback={
           <div className="grid gap-6 lg:grid-cols-[1fr_440px]">
-            <Skeleton className="aspect-video rounded-2xl bg-ff-card" />
-            <Skeleton className="h-[600px] rounded-2xl bg-ff-card" />
+            <Skeleton className="aspect-video rounded-2xl bg-white/[0.03]" />
+            <Skeleton className="h-[600px] rounded-2xl bg-white/[0.03]" />
           </div>
         }
       >

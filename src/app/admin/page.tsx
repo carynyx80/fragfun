@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { explorerAccountUrl, explorerTxUrl } from "@/lib/public-env";
 import { shortAddr, timeAgo } from "@/lib/format";
+import { PageHeader } from "@/components/common/empty-state";
 
 type Row = Record<string, string | number | null>;
 interface Overview {
@@ -68,25 +69,25 @@ export default function AdminPage() {
     }
   };
 
-  if (loading) return <Skeleton className="mx-auto mt-10 h-96 max-w-5xl rounded-2xl bg-ff-card" />;
+  if (loading) return <Skeleton className="mx-auto mt-10 h-96 max-w-5xl rounded-2xl bg-white/[0.03]" />;
   if (!user?.isAdmin || (q.error instanceof ClientApiError && q.error.status === 403))
     return <p className="py-24 text-center text-sm text-ff-muted">This area is restricted to Fragfun administrators.</p>;
-  if (q.isLoading || !q.data) return <Skeleton className="mx-auto mt-10 h-96 max-w-5xl rounded-2xl bg-ff-card" />;
+  if (q.isLoading || !q.data) return <Skeleton className="mx-auto mt-10 h-96 max-w-5xl rounded-2xl bg-white/[0.03]" />;
   const d = q.data;
 
   return (
     <div className="mx-auto max-w-6xl space-y-10 px-4 py-8">
-      <h1 className="text-2xl font-bold tracking-tight">Admin</h1>
+      <PageHeader eyebrow="Operations" title="Admin" className="pb-0 pt-4" />
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5">
         {Object.entries(d.stats).map(([k, v]) => (
-          <div key={k} className="rounded-xl border border-ff-border bg-ff-card p-3">
+          <div key={k} className="surface rounded-2xl p-3">
             <div className="text-xl font-semibold tabular-nums">{v}</div>
             <div className="text-xs text-ff-muted">{STAT_LABELS[k] ?? k}</div>
           </div>
         ))}
       </div>
 
-      <section className="rounded-xl border border-ff-border bg-ff-card p-4" data-testid="treasury">
+      <section className="surface rounded-2xl p-4" data-testid="treasury">
         <h2 className="mb-3 font-semibold">Company treasury</h2>
         {!treasury.data ? (
           <Skeleton className="h-20 bg-ff-bg2" />
@@ -112,7 +113,7 @@ export default function AdminPage() {
             </div>
             {treasury.data.error && <p className="text-xs text-ff-red">{treasury.data.error}</p>}
             {treasury.data.recent.length > 0 && (
-              <ul className="divide-y divide-ff-border rounded-lg border border-ff-border text-xs">
+              <ul className="divide-y divide-white/[0.05] rounded-lg border border-ff-border text-xs">
                 {treasury.data.recent.slice(0, 8).map((r) => (
                   <li key={r.signature} className="flex justify-between px-3 py-1.5">
                     <a className="font-mono underline" href={explorerTxUrl(r.signature)} target="_blank" rel="noreferrer">
@@ -136,7 +137,7 @@ export default function AdminPage() {
         ) : (
           <div className="overflow-x-auto rounded-xl border border-ff-border">
             <table className="w-full text-sm">
-              <tbody className="divide-y divide-ff-border">
+              <tbody className="divide-y divide-white/[0.05]">
                 {d.reports.map((r) => (
                   <tr key={String(r.id)}>
                     <td className="px-3 py-2">{r.target_type}</td>
@@ -182,7 +183,7 @@ export default function AdminPage() {
         {!d.queue.length ? (
           <p className="text-sm text-ff-muted">Queue is empty.</p>
         ) : (
-          <ul className="divide-y divide-ff-border rounded-xl border border-ff-border">
+          <ul className="divide-y divide-white/[0.05] rounded-xl border border-ff-border">
             {d.queue.map((c) => (
               <li key={String(c.id)} className="flex items-center gap-3 px-3 py-2 text-sm">
                 <Link href={`/clip/${c.id}`} className="flex-1 truncate underline">
@@ -205,7 +206,7 @@ export default function AdminPage() {
         <div>
           <h2 className="mb-3 font-semibold">Accounts</h2>
           <div className="flex gap-2">
-            <Input value={wallet} onChange={(e) => setWallet(e.target.value.trim())} placeholder="Wallet address" className="h-9 border-ff-border bg-ff-bg2" />
+            <Input value={wallet} onChange={(e) => setWallet(e.target.value.trim())} placeholder="Wallet address" className="h-9 border-white/[0.08] bg-white/[0.03] focus-visible:border-white/25" />
             <Button size="sm" variant="destructive" disabled={!wallet} onClick={() => void act({ action: "suspend_user", wallet, reason: "admin" })}>
               Suspend
             </Button>
@@ -224,8 +225,8 @@ export default function AdminPage() {
             ))}
           </div>
           <div className="flex gap-2">
-            <Input value={cat.slug} onChange={(e) => setCat({ ...cat, slug: e.target.value })} placeholder="slug" className="h-9 border-ff-border bg-ff-bg2" />
-            <Input value={cat.name} onChange={(e) => setCat({ ...cat, name: e.target.value })} placeholder="Name" className="h-9 border-ff-border bg-ff-bg2" />
+            <Input value={cat.slug} onChange={(e) => setCat({ ...cat, slug: e.target.value })} placeholder="slug" className="h-9 border-white/[0.08] bg-white/[0.03] focus-visible:border-white/25" />
+            <Input value={cat.name} onChange={(e) => setCat({ ...cat, name: e.target.value })} placeholder="Name" className="h-9 border-white/[0.08] bg-white/[0.03] focus-visible:border-white/25" />
             <Button
               size="sm"
               disabled={!cat.slug || !cat.name}
@@ -250,7 +251,7 @@ export default function AdminPage() {
         {!d.failedLaunches.length ? (
           <p className="text-sm text-ff-muted">None.</p>
         ) : (
-          <ul className="divide-y divide-ff-border rounded-xl border border-ff-border text-sm">
+          <ul className="divide-y divide-white/[0.05] rounded-xl border border-ff-border text-sm">
             {d.failedLaunches.map((l) => (
               <li key={String(l.id)} className="flex flex-wrap items-center gap-3 px-3 py-2">
                 <span className="font-semibold">${l.symbol}</span>
@@ -271,7 +272,7 @@ export default function AdminPage() {
       <section className="grid gap-6 lg:grid-cols-2">
         <div>
           <h2 className="mb-3 font-semibold">System health (warnings & errors)</h2>
-          <ul className="max-h-80 divide-y divide-ff-border overflow-y-auto rounded-xl border border-ff-border text-xs">
+          <ul className="max-h-80 divide-y divide-white/[0.05] overflow-y-auto rounded-xl border border-ff-border text-xs">
             {d.events.map((e) => (
               <li key={String(e.id)} className="px-3 py-2">
                 <span className={e.level === "error" ? "text-ff-red" : "text-yellow-400"}>{e.level}</span> · {e.source} · {timeAgo(String(e.created_at))}
@@ -283,7 +284,7 @@ export default function AdminPage() {
         </div>
         <div>
           <h2 className="mb-3 font-semibold">Audit log</h2>
-          <ul className="max-h-80 divide-y divide-ff-border overflow-y-auto rounded-xl border border-ff-border text-xs">
+          <ul className="max-h-80 divide-y divide-white/[0.05] overflow-y-auto rounded-xl border border-ff-border text-xs">
             {d.audit.map((a) => (
               <li key={String(a.id)} className="px-3 py-2">
                 {a.action} · {a.target_type}:{shortAddr(String(a.target_id), 5)} · by {shortAddr(String(a.admin))} · {timeAgo(String(a.created_at))}

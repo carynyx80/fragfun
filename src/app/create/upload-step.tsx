@@ -148,7 +148,7 @@ export function UploadStep({ onReady }: { onReady: (clipId: string) => void }) {
           if (!busy) pick(e.dataTransfer.files[0]);
         }}
         className={cn(
-          "flex cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-ff-border bg-ff-bg2 px-6 py-14 text-center transition-colors",
+          "flex cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-white/[0.08] bg-white/[0.03] focus-visible:border-white/25 px-6 py-14 text-center transition-colors",
           dragging && "border-ff-green bg-ff-green/5",
           busy && "cursor-default opacity-80",
         )}
@@ -180,7 +180,7 @@ export function UploadStep({ onReady }: { onReady: (clipId: string) => void }) {
       </label>
 
       {busy && (
-        <div className="space-y-2 rounded-xl border border-ff-border bg-ff-card p-4">
+        <div className="space-y-2 surface rounded-2xl p-4">
           <div className="flex items-center gap-2 text-sm">
             <Loader2 className="size-4 animate-spin" />
             {phase === "checking" && "Checking your video…"}

@@ -20,14 +20,14 @@ test("creator uploads a clip and launches its token", async ({ page }) => {
 
   await installTestWallet(page, kp);
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: /Your Clips\./ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Your clips\./i })).toBeVisible();
 
   // Navigation
   await page.getByRole("link", { name: "Explore", exact: true }).first().click();
   await expect(page).toHaveURL(/\/explore/);
   await page.getByTestId("cta-launch").count(); // homepage CTA exists only on /
   await page.goto("/create");
-  await expect(page.getByText("Connect your Solana wallet to launch")).toBeVisible();
+  await expect(page.getByText("Connect to launch.")).toBeVisible();
 
   // Wallet connect + Sign-In With Solana
   await connectAndSignIn(page);

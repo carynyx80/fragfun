@@ -114,8 +114,8 @@ export function TradePanel({ mint, symbol, market }: { mint: string; symbol: str
   const tokBal = balances.data?.tokenAmount ? fromBaseUnits(balances.data.tokenAmount, 6, 2) : null;
 
   return (
-    <div id="trade" className="rounded-2xl border border-ff-border bg-ff-card p-4">
-      <div className="grid grid-cols-2 gap-1 rounded-xl bg-ff-bg2 p-1">
+    <div id="trade" className="surface rounded-[24px] p-4">
+      <div className="grid grid-cols-2 gap-1 rounded-2xl bg-white/[0.035] p-1">
         {(["buy", "sell"] as const).map((s) => (
           <button
             key={s}
@@ -130,7 +130,7 @@ export function TradePanel({ mint, symbol, market }: { mint: string; symbol: str
       </div>
 
       {unsupported ? (
-        <p className="mt-4 rounded-xl bg-ff-bg2 p-4 text-sm text-ff-muted">
+        <p className="mt-4 rounded-2xl bg-white/[0.035] p-4 text-sm text-ff-muted">
           The bonding curve is complete and the token is migrating to a liquidity pool. Trading here resumes once the pool is live.
         </p>
       ) : (
@@ -157,7 +157,7 @@ export function TradePanel({ mint, symbol, market }: { mint: string; symbol: str
             placeholder="0.0"
             aria-label="Amount"
             data-testid="trade-amount"
-            className="mt-1.5 h-12 w-full rounded-xl border border-ff-border bg-ff-bg2 px-3 text-lg font-semibold tabular-nums outline-none focus:border-[#3a3a3a]"
+            className="mt-1.5 h-12 w-full rounded-2xl border border-white/[0.07] bg-white/[0.025] px-3 text-lg font-semibold tabular-nums outline-none focus:border-[#3a3a3a]"
           />
           {side === "buy" && (
             <div className="mt-2 flex gap-1.5">
@@ -172,7 +172,7 @@ export function TradePanel({ mint, symbol, market }: { mint: string; symbol: str
             <span className="text-ff-muted">Max slippage</span>
             <div className="flex gap-1">
               {SLIPPAGES.map((s) => (
-                <button key={s} type="button" onClick={() => changeSlippage(s)} className={cn("rounded-md px-2 py-0.5", s === slippage ? "bg-[#222] text-white" : "text-ff-muted")}>
+                <button key={s} type="button" onClick={() => changeSlippage(s)} className={cn("rounded-md px-2 py-0.5", s === slippage ? "bg-white/10 text-white" : "text-ff-muted")}>
                   {s / 100}%
                 </button>
               ))}
@@ -180,7 +180,7 @@ export function TradePanel({ mint, symbol, market }: { mint: string; symbol: str
           </div>
 
           {quote && (
-            <dl className="mt-4 space-y-1.5 rounded-xl bg-ff-bg2 p-3 text-xs" data-testid="trade-quote">
+            <dl className="mt-4 space-y-1.5 rounded-2xl bg-white/[0.035] p-3 text-xs" data-testid="trade-quote">
               <div className="flex justify-between">
                 <dt className="text-ff-muted">Estimated receive</dt>
                 <dd className="font-semibold">

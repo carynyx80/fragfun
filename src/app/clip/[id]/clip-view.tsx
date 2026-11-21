@@ -27,8 +27,8 @@ export function ClipView({ id }: { id: string }) {
   if (q.isLoading)
     return (
       <div className="grid gap-6 lg:grid-cols-[1fr_440px]">
-        <Skeleton className="aspect-video rounded-2xl bg-ff-card" />
-        <Skeleton className="h-[600px] rounded-2xl bg-ff-card" />
+        <Skeleton className="aspect-video rounded-2xl bg-white/[0.03]" />
+        <Skeleton className="h-[600px] rounded-2xl bg-white/[0.03]" />
       </div>
     );
   if (q.isError) {
@@ -46,7 +46,7 @@ export function ClipView({ id }: { id: string }) {
           <VideoPlayer source={clip.playback} poster={clip.thumbnailUrl} autoPlay className="aspect-[9/16] max-h-[78vh] w-full sm:aspect-video" onPlayed={() => clip.isPublic && trackView(clip.id)} />
         </div>
         {!clip.isPublic && (
-          <p className="rounded-xl border border-ff-border bg-ff-card px-4 py-3 text-sm text-ff-muted">
+          <p className="surface rounded-2xl px-4 py-3 text-sm text-ff-muted">
             {clip.isDraft ? "This clip is a draft and only visible to you." : `Status: ${clip.moderationStatus}.`}
           </p>
         )}
@@ -98,7 +98,7 @@ export function ClipView({ id }: { id: string }) {
         {launched && clip.token ? (
           <TokenMarket mint={clip.token.mint} compactHeader />
         ) : (
-          <div className="rounded-2xl border border-ff-border bg-ff-card p-6 text-center">
+          <div className="surface rounded-[24px] p-6 text-center">
             <Rocket className="mx-auto size-6 text-ff-muted" />
             <p className="mt-3 font-medium">{clip.token ? "Launch in progress" : "No token yet"}</p>
             <p className="mt-1 text-sm text-ff-muted">

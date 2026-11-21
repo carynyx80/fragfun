@@ -33,7 +33,7 @@
   --border: var(--ff-border);
   --input: var(--ff-border);
   --ring: var(--ff-green);
-  --radius: 0.75rem;
+  --radius: 0.9rem;
   color-scheme: dark;
 }
 
@@ -98,11 +98,126 @@
   scrollbar-width: none;
 }
 
+/* ------------------------------------------------------------------ design system */
+
+/* Display type: big, tight, confident. */
+.display {
+  font-family: var(--font-display), var(--font-geist-sans), sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.045em;
+  line-height: 0.92;
+  font-variation-settings: "wdth" 85;
+}
+.h-section {
+  font-family: var(--font-display), var(--font-geist-sans), sans-serif;
+  font-weight: 650;
+  letter-spacing: -0.035em;
+  line-height: 1;
+}
+/* Small monospace label above headings. */
+.eyebrow {
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ff-muted);
+}
+.num {
+  font-family: var(--font-geist-mono), monospace;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+/* Surfaces: near-black with a 1px top highlight instead of drop shadows. */
+.surface {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.012));
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+.glass {
+  background: rgba(10, 10, 10, 0.62);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    0 12px 40px -12px rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+}
+.hairline {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.12), transparent);
+  height: 1px;
+}
+
+/* Primary action: solid green pill with a soft inner highlight. */
+.btn-glow {
+  background: var(--ff-green);
+  color: #050505;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.55),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.12),
+    0 8px 24px -10px rgba(139, 255, 22, 0.55);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+.btn-glow:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.12),
+    0 14px 30px -10px rgba(139, 255, 22, 0.6);
+}
+.btn-ghost {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+.btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+/* Faint grid + single green bloom for hero areas. */
+.hero-backdrop {
+  background-image:
+    radial-gradient(60% 50% at 50% 0%, rgba(139, 255, 22, 0.1), transparent 70%),
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: 100% 100%, 64px 64px, 64px 64px;
+  mask-image: linear-gradient(180deg, #000 55%, transparent);
+  -webkit-mask-image: linear-gradient(180deg, #000 55%, transparent);
+}
+
+/* Infinite marquee. */
+@keyframes ff-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.marquee-track {
+  animation: ff-marquee var(--marquee-duration, 40s) linear infinite;
+}
+.marquee:hover .marquee-track { animation-play-state: paused; }
+.fade-x {
+  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+}
+
+/* Outlined giant wordmark. */
+.wordmark-outline {
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(255, 255, 255, 0.14);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track { animation: none; }
+  * { scroll-behavior: auto !important; }
+}
+
 /* Wallet adapter modal, restyled to the brand. */
 .wallet-adapter-modal-wrapper {
-  background: var(--ff-bg-2) !important;
-  border: 1px solid var(--ff-border) !important;
-  border-radius: 16px !important;
+  background: #0b0b0b !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 24px !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 30px 80px -20px rgba(0, 0, 0, 0.8) !important;
   font-family: var(--font-geist-sans) !important;
 }
 .wallet-adapter-modal-title {
@@ -111,7 +226,11 @@
 }
 .wallet-adapter-button {
   font-family: var(--font-geist-sans) !important;
-  border-radius: 12px !important;
+  border-radius: 14px !important;
+}
+.wallet-adapter-modal-title {
+  font-family: var(--font-display), var(--font-geist-sans) !important;
+  letter-spacing: -0.03em !important;
 }
 .wallet-adapter-modal-list .wallet-adapter-button:hover {
   background: #1c1c1c !important;

@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { compact, usd, timeAgo } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { PageHeader } from "@/components/common/empty-state";
 
 interface War {
   id: string;
@@ -35,7 +36,7 @@ function Side({ war, side }: { war: War; side: "a" | "b" }) {
   const pct = total ? Math.round((s.votes / total) * 100) : 50;
   const mine = war.myVote === s.clip.id;
   return (
-    <div className={cn("flex-1 rounded-2xl border bg-ff-card p-3", mine ? "border-ff-green" : "border-ff-border")}>
+    <div className={cn("surface flex-1 rounded-[26px] p-3", mine && "border-ff-green/60")}>
       <VideoPlayer source={s.clip.playback} poster={s.clip.thumbnailUrl} className="aspect-[9/14] w-full rounded-xl" />
       <Link href={`/clip/${s.clip.id}`} className="mt-3 block truncate font-medium hover:underline">
         {s.clip.title}
@@ -89,7 +90,7 @@ function CreateWar({ open, onOpenChange }: { open: boolean; onOpenChange: (o: bo
   const [busy, setBusy] = useState(false);
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[85vh] overflow-y-auto border-ff-border bg-ff-bg2 sm:max-w-lg">
+      <DialogContent className="max-h-[85vh] overflow-y-auto border-white/[0.08] bg-[#0b0b0b] rounded-[28px] sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Start a Clip War</DialogTitle>
         </DialogHeader>
@@ -136,21 +137,15 @@ export default function WarsPage() {
   const [open, setOpen] = useState(false);
   const q = useQuery({ queryKey: ["wars"], queryFn: () => api<{ items: War[]; enabled: boolean }>("/api/wars"), refetchInterval: 20_000 });
   return (
-    <div className="mx-auto max-w-4xl px-4 py-8">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
-            <Swords className="size-6" /> Clip Wars
-          </h1>
-          <p className="mt-1 text-sm text-ff-muted">Two clips, one community vote. A social face-off — no wagers, no pools, no stakes.</p>
-        </div>
-        <Button className="h-9 rounded-full font-semibold" onClick={() => (user ? setOpen(true) : void signIn())}>
-          Start a war
+    <div className="mx-auto max-w-5xl px-4 pb-8">
+      <PageHeader eyebrow="Head to head" title="Clip Wars" description="Two clips, one community vote. A social face-off — no wagers, no pools, no stakes.">
+        <Button className="h-11 rounded-full px-5" onClick={() => (user ? setOpen(true) : void signIn())}>
+          <Swords /> Start a war
         </Button>
-      </div>
+      </PageHeader>
       <div className="mt-6 space-y-8">
         {q.isLoading ? (
-          <Skeleton className="h-96 rounded-2xl bg-ff-card" />
+          <Skeleton className="h-96 rounded-2xl bg-white/[0.03]" />
         ) : q.isError ? (
           <ErrorState message="Could not load Clip Wars." onRetry={() => void q.refetch()} />
         ) : !q.data!.items.length ? (

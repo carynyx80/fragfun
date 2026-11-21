@@ -3,9 +3,9 @@ import { expect, test } from "@playwright/test";
 test.describe("public pages", () => {
   test("homepage communicates the product and has working CTAs", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByRole("heading", { name: /Your Clips\./ })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Your clips\./i })).toBeVisible();
     await expect(page.getByText("Turn viral gaming moments into tradable tokens on Solana.")).toBeVisible();
-    await expect(page.getByRole("heading", { name: "How Fragfun works" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Four moves/ })).toBeVisible();
     await page.getByTestId("cta-launch").click();
     await expect(page).toHaveURL(/\/create$/);
   });

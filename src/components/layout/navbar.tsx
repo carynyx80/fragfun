@@ -48,7 +48,7 @@ function SearchBox({ className }: { className?: string }) {
         maxLength={64}
         placeholder="Search clips, tokens, creators"
         aria-label="Search"
-        className="h-9 w-full rounded-full border border-ff-border bg-ff-bg2 pl-9 pr-3 text-sm outline-none placeholder:text-ff-muted focus:border-[#3a3a3a]"
+        className="h-9 w-full rounded-full border border-white/[0.07] bg-white/[0.04] pl-9 pr-3 text-[13px] outline-none transition-colors placeholder:text-white/40 focus:border-white/20 focus:bg-white/[0.06]"
       />
     </form>
   );
@@ -71,7 +71,7 @@ function Notifications() {
         if (open && data?.unread) void api("/api/notifications", { method: "POST", json: { markAllRead: true } }).then(() => qc.invalidateQueries({ queryKey: ["notifications"] }));
       }}
     >
-      <DropdownMenuTrigger aria-label="Notifications" className="relative flex size-9 items-center justify-center rounded-full hover:bg-ff-card">
+      <DropdownMenuTrigger aria-label="Notifications" className="relative flex size-9 items-center justify-center rounded-full hover:bg-white/[0.03]">
         <Bell className="size-[18px]" />
         {!!data?.unread && <span className="absolute right-2 top-2 size-2 rounded-full bg-ff-green" />}
       </DropdownMenuTrigger>
@@ -93,37 +93,36 @@ function Notifications() {
 export function Navbar() {
   const pathname = usePathname();
   const { user } = useAuth();
+  const isActive = (href: string) => !href.includes("?") && (href === "/" ? pathname === "/" : pathname.startsWith(href));
   return (
     <>
       {publicEnv.network === "devnet" && (
-        <div className="border-b border-ff-border bg-ff-bg2 py-1 text-center text-[11px] text-ff-muted">
-          Devnet mode — tokens and SOL here have no real value.
+        <div className="py-1.5 text-center font-mono text-[10px] uppercase tracking-[0.18em] text-ff-muted">
+          Devnet — test tokens, no real value
         </div>
       )}
-      <header className="sticky top-0 z-40 border-b border-ff-border bg-ff-bg/85 backdrop-blur-md">
-        <div className="mx-auto flex h-14 max-w-[1400px] items-center gap-4 px-4 lg:px-6">
+      {/* Floating glass bar */}
+      <header className="sticky top-0 z-40 px-3 pt-3 lg:px-6">
+        <div className="glass mx-auto flex h-14 max-w-[1240px] items-center gap-3 rounded-full pl-4 pr-2 sm:pl-5">
           <Logo />
-          <nav className="ml-4 hidden items-center gap-1 lg:flex" aria-label="Main">
-            {NAV.map((n) => {
-              const active = pathname === n.href.split("?")[0] && !n.href.includes("?");
-              return (
-                <Link
-                  key={n.label}
-                  href={n.href}
-                  className={cn(
-                    "whitespace-nowrap rounded-full px-3 py-1.5 text-sm text-ff-muted transition-colors hover:text-white",
-                    active && "text-white",
-                    n.wide && "hidden xl:inline-flex",
-                  )}
-                >
-                  {n.label}
-                </Link>
-              );
-            })}
+          <nav className="ml-3 hidden items-center gap-0.5 lg:flex" aria-label="Main">
+            {NAV.map((n) => (
+              <Link
+                key={n.label}
+                href={n.href}
+                className={cn(
+                  "whitespace-nowrap rounded-full px-3.5 py-1.5 text-[13.5px] text-white/60 transition-colors hover:text-white",
+                  isActive(n.href) && "bg-white/[0.07] text-white",
+                  n.wide && "hidden xl:inline-flex",
+                )}
+              >
+                {n.label}
+              </Link>
+            ))}
           </nav>
-          <SearchBox className="ml-auto hidden w-full max-w-xs md:block" />
-          <div className="ml-auto flex items-center gap-1 md:ml-2">
-            <Link href="/explore" aria-label="Search" className="flex size-9 items-center justify-center rounded-full hover:bg-ff-card md:hidden">
+          <SearchBox className="ml-auto hidden w-full max-w-[240px] md:block" />
+          <div className="ml-auto flex items-center gap-1 md:ml-1">
+            <Link href="/explore" aria-label="Search" className="flex size-9 items-center justify-center rounded-full text-white/70 hover:bg-white/5 md:hidden">
               <Search className="size-[18px]" />
             </Link>
             {user && <Notifications />}
@@ -146,15 +145,15 @@ export function MobileNav() {
     { href: "/activity", label: "Activity", icon: Activity },
   ];
   return (
-    <nav aria-label="Mobile" className="fixed inset-x-0 bottom-0 z-40 border-t border-ff-border bg-ff-bg/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md lg:hidden">
-      <div className="grid grid-cols-5">
+    <nav aria-label="Mobile" className="fixed inset-x-3 bottom-3 z-40 pb-[env(safe-area-inset-bottom)] lg:hidden">
+      <div className="glass grid grid-cols-5 rounded-full px-1">
         {tabs.map((t) => {
           const active = t.href === "/" ? pathname === "/" : pathname.startsWith(t.href);
           const Icon = t.icon;
           return (
             <Link key={t.href} href={t.href} className="flex h-14 flex-col items-center justify-center gap-0.5 text-[10px]">
               {t.primary ? (
-                <span className="flex size-9 items-center justify-center rounded-full bg-ff-green text-black">
+                <span className="btn-glow flex size-10 items-center justify-center rounded-full">
                   <Icon className="size-5" />
                 </span>
               ) : (

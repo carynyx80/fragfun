@@ -97,7 +97,7 @@ export function VerticalFeed({ category }: { category?: string }) {
     if (active >= clips.length - 2 && q.hasNextPage && !q.isFetchingNextPage) void q.fetchNextPage();
   }, [active, clips.length, q]);
 
-  if (q.isLoading) return <Skeleton className="mx-auto h-[calc(100dvh-9rem)] w-full max-w-[460px] rounded-2xl bg-ff-card" />;
+  if (q.isLoading) return <Skeleton className="mx-auto h-[calc(100dvh-9rem)] w-full max-w-[460px] rounded-2xl bg-white/[0.03]" />;
   if (q.isError) return <ErrorState message="Could not load the feed." onRetry={() => void q.refetch()} />;
   if (!clips.length)
     return <EmptyState title="No clips yet" body="No clips launched yet. Be the first to turn a gaming moment into a market." action={{ href: "/create", label: "Launch a clip" }} />;

@@ -23,7 +23,7 @@ export function WalletButton({ compact = false }: { compact?: boolean }) {
 
   if (!connected) {
     return (
-      <Button onClick={openWalletModal} disabled={connecting} className="h-9 rounded-full px-4 font-semibold" data-testid="connect-wallet">
+      <Button onClick={openWalletModal} disabled={connecting} className="h-10 rounded-full px-4" data-testid="connect-wallet">
         {connecting ? <Loader2 className="animate-spin" /> : <Wallet />}
         {compact ? "Connect" : "Connect wallet"}
       </Button>
@@ -31,7 +31,7 @@ export function WalletButton({ compact = false }: { compact?: boolean }) {
   }
   if (!user) {
     return (
-      <Button onClick={() => void signIn()} disabled={signingIn} className="h-9 rounded-full px-4 font-semibold" data-testid="sign-in">
+      <Button onClick={() => void signIn()} disabled={signingIn} className="h-10 rounded-full px-4" data-testid="sign-in">
         {signingIn ? <Loader2 className="animate-spin" /> : <Wallet />}
         Sign in
       </Button>
@@ -40,7 +40,7 @@ export function WalletButton({ compact = false }: { compact?: boolean }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        className="flex h-9 items-center gap-2 rounded-full border border-ff-border bg-ff-card pl-1 pr-3 text-sm font-medium hover:bg-[#1c1c1c]"
+        className="btn-ghost flex h-10 items-center gap-2 rounded-full pl-1 pr-3.5 text-sm font-medium"
         data-testid="profile-menu"
       >
         <Avatar wallet={user.wallet} url={user.avatar_url} size={28} />
