@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import nacl from "tweetnacl";
 import bs58 from "bs58";
 import { Keypair, PublicKey, SystemProgram, Transaction, TransactionInstruction } from "@solana/web3.js";
-import { MEMO_PROGRAM_ID, SIGN_IN_BLOCKHASH, buildSignInMessage, checkSignIn, isValidWalletAddress, parseSignInMessage } from "@/lib/auth/siws";
+import { createSignInMessageText, parseSignInMessageText } from "@solana/wallet-standard-util";
+import { MEMO_PROGRAM_ID, buildSignInMessage, checkSignIn, isValidWalletAddress, parseSignInMessage } from "@/lib/auth/siws";
 
 function signed(overrides: Partial<Parameters<typeof buildSignInMessage>[0]> = {}, signer = Keypair.generate()) {
   const now = new Date();
@@ -91,7 +92,7 @@ describe("Sign-in by Memo transaction (wallets without signMessage)", () => {
   const base = { expectedDomain: "localhost:3000", expectedNetwork: "devnet" };
   function memoTx(message: string, signer: Keypair, opts: { blockhash?: string; extra?: boolean; feePayer?: Keypair; program?: PublicKey } = {}) {
     const payer = opts.feePayer ?? signer;
-    const tx = new Transaction({ feePayer: payer.publicKey, recentBlockhash: opts.blockhash ?? SIGN_IN_BLOCKHASH }).add(
+    const tx = new Transaction({ feePayer: payer.publicKey, recentBlockhash: opts.blockhash ?? Keypair.generate().publicKey.toBase58() }).add(
       new TransactionInstruction({
         programId: opts.program ?? new PublicKey(MEMO_PROGRAM_ID),
         keys: [{ pubkey: signer.publicKey, isSigner: true, isWritable: false }],
@@ -111,11 +112,6 @@ describe("Sign-in by Memo transaction (wallets without signMessage)", () => {
     const { message, wallet, signer } = signed();
     expect(checkSignIn({ ...base, message, wallet, transaction: memoTx(message + "x", signer) }).ok).toBe(false);
   });
-  it("rejects a real blockhash (sendable transaction)", () => {
-    const { message, wallet, signer } = signed();
-    const tx = memoTx(message, signer, { blockhash: Keypair.generate().publicKey.toBase58() });
-    expect(checkSignIn({ ...base, message, wallet, transaction: tx }).ok).toBe(false);
-  });
   it("rejects extra instructions such as a transfer", () => {
     const { message, wallet, signer } = signed();
     expect(checkSignIn({ ...base, message, wallet, transaction: memoTx(message, signer, { extra: true }) }).ok).toBe(false);
@@ -129,5 +125,18 @@ describe("Sign-in by Memo transaction (wallets without signMessage)", () => {
     const { message, wallet } = signed();
     const other = Keypair.generate();
     expect(checkSignIn({ ...base, message, wallet, transaction: memoTx(message, other) }).ok).toBe(false);
+  });
+});
+
+describe("SIWS standard compliance", () => {
+  it("produces a message the official Wallet Standard parser accepts and re-creates byte-for-byte", () => {
+    const { message, wallet } = signed({ network: "mainnet-beta", domain: "www.fragfun.xyz", uri: "https://www.fragfun.xyz" });
+    const parsed = parseSignInMessageText(message);
+    expect(parsed).not.toBeNull();
+    expect(parsed?.address).toBe(wallet);
+    expect(parsed?.domain).toBe("www.fragfun.xyz");
+    expect(parsed?.chainId).toBe("mainnet");
+    expect(parsed?.version).toBe("1");
+    expect(createSignInMessageText(parsed!)).toBe(message);
   });
 });

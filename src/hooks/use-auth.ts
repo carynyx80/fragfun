@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useWallet } from "@solana/wallet-adapter-react";
+import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { WalletReadyState } from "@solana/wallet-adapter-base";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import bs58 from "bs58";
@@ -11,8 +11,8 @@ import { toast } from "sonner";
 import { api, friendlyWalletError, isUserRejection } from "@/lib/client";
 
 const MEMO_PROGRAM_ID = new PublicKey("MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr");
-/** Not a real blockhash: the sign-in transaction can never be broadcast or cost a fee. */
-const SIGN_IN_BLOCKHASH = "11111111111111111111111111111111";
+/** Errors meaning "this wallet/account cannot sign plain messages" — the only case where we fall back. */
+const MESSAGE_UNSUPPORTED = /not supported|unsupported|not implemented|method not found|does not support|ledger/i;
 
 function toBase64(bytes: Uint8Array) {
   let s = "";
@@ -20,9 +20,13 @@ function toBase64(bytes: Uint8Array) {
   return btoa(s);
 }
 
-/** Memo-only transaction carrying the sign-in message. Placeholder blockhash: never sendable, never costs a fee. */
-function signInTransaction(pk: PublicKey, message: string) {
-  return new Transaction({ feePayer: pk, recentBlockhash: SIGN_IN_BLOCKHASH }).add(
+/**
+ * Memo-only transaction carrying the sign-in message. It uses a real recent blockhash so the wallet can
+ * simulate it (Phantom warns about transactions it cannot simulate); Fragfun only verifies the signature
+ * and never broadcasts it.
+ */
+function signInTransaction(pk: PublicKey, message: string, recentBlockhash: string) {
+  return new Transaction({ feePayer: pk, recentBlockhash }).add(
     new TransactionInstruction({
       programId: MEMO_PROGRAM_ID,
       keys: [{ pubkey: pk, isSigner: true, isWritable: false }],
@@ -76,6 +80,7 @@ export interface SessionInfo {
  */
 export function useAuth() {
   const wallet = useWallet();
+  const { connection } = useConnection();
   const modal = useWalletModal();
   const qc = useQueryClient();
   const [signingIn, setSigningIn] = useState(false);
@@ -120,7 +125,8 @@ export function useAuth() {
       // Fallback for wallets that cannot sign plain messages (e.g. Ledger-backed accounts): sign a Memo-only
       // transaction with a placeholder blockhash. It is never sent, cannot move funds and costs nothing.
       const signWithTransaction = async (msg: string) => {
-        const signed = await wallet.signTransaction!(signInTransaction(pk, msg));
+        const { blockhash } = await connection.getLatestBlockhash("confirmed");
+        const signed = await wallet.signTransaction!(signInTransaction(pk, msg, blockhash));
         return { transaction: toBase64(signed.serialize({ requireAllSignatures: true, verifySignatures: false })) };
       };
 
@@ -130,12 +136,16 @@ export function useAuth() {
           const sig = await wallet.signMessage!(new TextEncoder().encode(message));
           proof = { signature: bs58.encode(sig) };
         } catch (e) {
-          if (isUserRejection(e) || !canTx) throw e;
-          toast.message("Your wallet can't sign messages — approve the sign-in transaction instead. It is never sent and costs nothing.");
+          console.warn("[sign-in] signMessage failed:", e);
+          const text = e instanceof Error ? `${e.name} ${e.message} ${String((e as { error?: unknown }).error ?? "")}` : String(e);
+          // Only fall back when the wallet genuinely can't sign messages; any other failure (rejected, blocked,
+          // locked) is shown as-is instead of following up with a second, unexpected request.
+          if (isUserRejection(e) || !canTx || !MESSAGE_UNSUPPORTED.test(text)) throw e;
+          toast.message("Your wallet can't sign messages — approve the sign-in transaction instead. Fragfun never sends it, so it costs nothing.");
           proof = await signWithTransaction(message);
         }
       } else {
-        toast.message("Approve the sign-in transaction in your wallet. It is never sent and costs nothing.");
+        toast.message("Approve the sign-in transaction in your wallet. Fragfun never sends it, so it costs nothing.");
         proof = await signWithTransaction(message);
       }
       try {
@@ -144,7 +154,7 @@ export function useAuth() {
         // Some wallets alter or wrap signed messages; retry once with the transaction method.
         if (!("signature" in proof) || !canTx || !(e instanceof Error) || !/verified/i.test(e.message)) throw e;
         const { message: retryMessage } = await api<{ message: string }>("/api/auth/nonce", { method: "POST", json: { wallet: addr } });
-        toast.message("One more approval needed — this sign-in transaction is never sent and costs nothing.");
+        toast.message("One more approval needed — Fragfun never sends this sign-in transaction, so it costs nothing.");
         const retry = await signWithTransaction(retryMessage);
         await api("/api/auth/verify", { method: "POST", json: { wallet: addr, message: retryMessage, ...retry } });
       }
@@ -157,7 +167,7 @@ export function useAuth() {
     } finally {
       setSigningIn(false);
     }
-  }, [wallet, openWalletModal, qc]);
+  }, [wallet, connection, openWalletModal, qc]);
 
   /** Disconnect the current wallet and let the user pick another one. */
   const switchWallet = useCallback(async () => {

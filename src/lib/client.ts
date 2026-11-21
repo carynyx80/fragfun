@@ -57,6 +57,7 @@ export function friendlyWalletError(e: unknown): string {
   if (e instanceof ClientApiError) return e.message;
   const msg = e instanceof Error ? e.message : String(e);
   if (/reject|denied|cancel/i.test(msg)) return "You rejected the request in your wallet.";
+  if (/blocked|malicious/i.test(msg)) return "Your wallet blocked this request. Reload the page and try again; if it keeps happening, tell us which wallet you use.";
   if (/not connected|WalletNotConnected/i.test(msg)) return "Your wallet disconnected. Reconnect and try again.";
   if (/not ready|not installed|WalletNotReady/i.test(msg)) return "Wallet not found. Install Phantom or Solflare.";
   return msg || "Something went wrong.";
