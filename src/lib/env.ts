@@ -80,6 +80,9 @@ const schema = z.object({
 
   // Admin
   ADMIN_WALLETS: z.string().optional().default(""),
+  // Extra browser origins (hosts) allowed besides APP_URL, comma-separated; "*" matches one label
+  // fragment, e.g. "fragfun-*-carynyx1.vercel.app". Never use a bare "*.vercel.app".
+  ALLOWED_ORIGIN_HOSTS: z.string().optional().default(""),
   // Backend only: reconcile pending launches in-process every N seconds (0 = off; use the cron route instead).
   RECONCILER_INTERVAL_SECONDS: z.coerce.number().int().nonnegative().default(0),
 

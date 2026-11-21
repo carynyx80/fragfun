@@ -7,6 +7,7 @@ import { env } from "@/lib/env";
 import { getSessionUser, type SessionUser } from "@/lib/auth/session";
 import { rateLimit } from "@/lib/rate-limit";
 import { logEvent } from "@/lib/log";
+import { isAllowedOriginHost, originHost as parseOriginHost } from "@/lib/origin";
 
 export class ApiError extends Error {
   constructor(
@@ -74,20 +75,37 @@ export function toErrorResponse(e: unknown, req?: NextRequest) {
 export function assertSameOrigin(req: NextRequest) {
   if (req.nextUrl.pathname.startsWith("/api/webhooks/")) return; // signature-verified instead
   const origin = req.headers.get("origin");
-  const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host");
   if (!origin) {
     // Browsers always send Origin on cross-site POST/PUT/DELETE; allow same-site tools in dev only.
     if (env().NODE_ENV !== "production") return;
+    blocked(req, "missing_origin");
     throw err.forbidden("Missing Origin header.");
   }
-  let originHost: string;
-  try {
-    originHost = new URL(origin).host;
-  } catch {
-    throw err.forbidden("Invalid Origin header.");
+  const host = parseOriginHost(origin);
+  if (!host || !isAllowedOriginHost(host, env().APP_URL, env().ALLOWED_ORIGIN_HOSTS)) {
+    blocked(req, "origin_not_allowed");
+    throw err.forbidden("Cross-site request blocked. Open Fragfun at its main address and try again.");
   }
-  const allowed = new Set([host, new URL(env().APP_URL).host].filter(Boolean));
-  if (!allowed.has(originHost)) throw err.forbidden("Cross-site request blocked.");
+}
+
+/** The allowed browser origin of this request (falls back to APP_URL), used to bind sign-in messages. */
+export function requestOrigin(req: NextRequest): URL {
+  const host = parseOriginHost(req.headers.get("origin"));
+  if (host && isAllowedOriginHost(host, env().APP_URL, env().ALLOWED_ORIGIN_HOSTS)) return new URL(req.headers.get("origin")!);
+  return new URL(env().APP_URL);
+}
+
+function blocked(req: NextRequest, reason: string) {
+  const details = {
+    reason,
+    path: req.nextUrl.pathname,
+    origin: req.headers.get("origin"),
+    referer: req.headers.get("referer"),
+    forwardedHost: req.headers.get("x-forwarded-host"),
+    ua: req.headers.get("user-agent")?.slice(0, 120),
+  };
+  console.warn("[csrf] blocked", JSON.stringify(details));
+  void logEvent("warn", "csrf", `Blocked request: ${reason}`, details);
 }
 
 export async function requireUser(): Promise<SessionUser> {

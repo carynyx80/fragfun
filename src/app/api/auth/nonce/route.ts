@@ -1,6 +1,6 @@
 import { randomBytes } from "node:crypto";
 import { z } from "zod";
-import { route, parseJson, limit, err } from "@/lib/api";
+import { route, parseJson, limit, err, requestOrigin } from "@/lib/api";
 import { env } from "@/lib/env";
 import { q } from "@/lib/db";
 import { buildSignInMessage, isValidWalletAddress } from "@/lib/auth/siws";
@@ -13,9 +13,10 @@ export const POST = route(async (req) => {
   const { wallet } = await parseJson(req, Body);
   if (!isValidWalletAddress(wallet)) throw err.badRequest("That is not a valid Solana wallet address.");
   const e = env();
-  // The signed message is bound to the configured public origin (APP_URL), never to request headers,
-  // so it stays correct behind proxies (Vercel → Railway) and cannot be spoofed with a Host header.
-  const app = new URL(e.APP_URL);
+  // The signed message is bound to the page's origin — only if that origin is on the allow-list
+  // (APP_URL or ALLOWED_ORIGIN_HOSTS); otherwise APP_URL. Correct behind the Vercel → Railway proxy,
+  // and wallets see a domain that matches the site the user is actually on.
+  const app = requestOrigin(req);
   const host = app.host;
   const proto = app.protocol.replace(":", "");
   const nonce = randomBytes(16).toString("hex");

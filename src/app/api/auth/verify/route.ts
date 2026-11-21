@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { route, parseJson, limit, err } from "@/lib/api";
+import { route, parseJson, limit, err, requestOrigin } from "@/lib/api";
 import { env } from "@/lib/env";
 import { tx } from "@/lib/db";
 import { checkSignIn } from "@/lib/auth/siws";
@@ -23,7 +23,7 @@ const REASONS: Record<string, string> = {
 export const POST = route(async (req) => {
   limit(req, "auth-verify", 20, 60_000);
   const body = await parseJson(req, Body);
-  const host = new URL(env().APP_URL).host;
+  const host = requestOrigin(req).host;
   const check = checkSignIn({
     message: body.message,
     signature: body.signature,
