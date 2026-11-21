@@ -76,16 +76,23 @@ test("creator uploads a clip and launches its token", async ({ page }) => {
   await expect(page.getByTestId("trade-quote")).toBeVisible({ timeout: 60_000 });
 });
 
-test("wallet signature rejection is handled", async ({ page }) => {
+test("creator edits their profile and sees earnings", async ({ page }) => {
   const kp = testKeypair(true);
   await installTestWallet(page, kp, { rejectTransactions: true });
   await page.goto("/settings");
   await connectAndSignIn(page);
-  await expect(page.getByRole("heading", { name: "Settings" })).toBeVisible();
-  await page.getByPlaceholder("letters, numbers, _").fill(`e2e_${Date.now().toString(36)}`);
-  await page.getByRole("button", { name: "Save profile" }).click();
+  await expect(page.getByRole("heading", { name: "Edit profile" })).toBeVisible();
+  const username = `e2e_${Date.now().toString(36)}`;
+  await page.getByTestId("username-input").fill(username);
+  await page.getByLabel("Display name").fill("E2E Creator");
+  await page.getByLabel("Bio").fill("Speedrunner. Clips daily.");
+  await expect(page.getByText("Speedrunner. Clips daily.").last()).toBeVisible(); // live preview
+  await page.getByTestId("save-profile").click();
   await expect(page.getByText("Profile saved")).toBeVisible();
-  // Creator profile reflects the update
+  // Public profile reflects the update, and the owner sees earnings + dashboard
   await page.goto(`/profile/${kp.publicKey.toBase58()}`);
+  await expect(page.getByRole("heading", { name: "E2E Creator" })).toBeVisible();
+  await expect(page.getByText("Speedrunner. Clips daily.")).toBeVisible();
+  await expect(page.getByTestId("creator-fees")).toBeVisible();
   await expect(page.getByText("Creator dashboard")).toBeVisible();
 });

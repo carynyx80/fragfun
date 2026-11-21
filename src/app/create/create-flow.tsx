@@ -16,6 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { VideoPlayer } from "@/components/clip/video-player";
 import { UploadStep } from "./upload-step";
+import { signSubmitAndTrack } from "@/lib/prepared-client";
 import { explorerTxUrl, explorerAccountUrl, pumpFunCoinUrl, publicEnv } from "@/lib/public-env";
 import { shortAddr, sol } from "@/lib/format";
 import { tokenFormSchema } from "@/lib/validation";
@@ -39,6 +40,7 @@ interface PrepareResp {
   status: string;
   mint: string;
   transaction: string | null;
+  feeShare?: { txId: string; transaction: string } | null;
   preview?: {
     imageUrl: string;
     metadataUri: string;
@@ -48,6 +50,7 @@ interface PrepareResp {
     walletBalanceLamports: number;
     programs: string[];
     networkFeePaidBy?: "you" | "fragfun";
+    creatorFeeSplit?: { creatorBps: number; platformBps: number; recipient: string } | null;
   };
 }
 
@@ -135,6 +138,9 @@ export function CreateFlow() {
   const [prepared, setPrepared] = useState<PrepareResp | null>(null);
   const [attempt, setAttempt] = useState<AttemptResp | null>(null);
   const [launchError, setLaunchError] = useState<string | null>(null);
+  const [feeShareSent, setFeeShareSent] = useState(false);
+  const [feeShareBusy, setFeeShareBusy] = useState(false);
+  const [feeShareDone, setFeeShareDone] = useState(false);
 
   const clip = clipQ.data?.clip;
   // Prefill the details form once per loaded clip (state adjusted during render, not in an effect).
@@ -298,11 +304,22 @@ export function CreateFlow() {
     if (!wallet.signTransaction) return toast.error("This wallet cannot sign transactions.");
     setLaunchError(null);
     let signedB64: string;
+    let feeShareSigned: { txId: string; signedTransaction: string } | undefined;
     try {
       const tx = VersionedTransaction.deserialize(b64ToBytes(prepared.transaction));
-      const signed = await wallet.signTransaction(tx);
-      signed.sign([mintRef.current]);
-      signedB64 = bytesToB64(signed.serialize());
+      if (prepared.feeShare && wallet.signAllTransactions) {
+        // One wallet approval for both: the launch, and the creator-fee split sent right after it confirms.
+        const feeTx = VersionedTransaction.deserialize(b64ToBytes(prepared.feeShare.transaction));
+        const [signed, signedFee] = await wallet.signAllTransactions([tx, feeTx]);
+        signed.sign([mintRef.current]);
+        signedB64 = bytesToB64(signed.serialize());
+        feeShareSigned = { txId: prepared.feeShare.txId, signedTransaction: bytesToB64(signedFee.serialize()) };
+      } else {
+        const signed = await wallet.signTransaction(tx);
+        signed.sign([mintRef.current]);
+        signedB64 = bytesToB64(signed.serialize());
+      }
+      setFeeShareSent(Boolean(feeShareSigned));
     } catch (e) {
       if (isUserRejection(e)) await api(`/api/launches/${prepared.attemptId}/cancel`, { method: "POST", json: {} }).catch(() => undefined);
       setLaunchError(friendlyWalletError(e));
@@ -311,7 +328,10 @@ export function CreateFlow() {
     }
     setStep("launching");
     try {
-      const a = await api<AttemptResp>(`/api/launches/${prepared.attemptId}/submit`, { method: "POST", json: { signedTransaction: signedB64 } });
+      const a = await api<AttemptResp>(`/api/launches/${prepared.attemptId}/submit`, {
+        method: "POST",
+        json: { signedTransaction: signedB64, feeShare: feeShareSigned },
+      });
       setAttempt(a);
       mintRef.current = null;
       await poll(prepared.attemptId);
@@ -527,7 +547,13 @@ export function CreateFlow() {
               ["Network", publicEnv.network === "devnet" ? "Solana devnet" : "Solana mainnet"],
               ["Launch infrastructure", "Pump.fun bonding curve (create_v2)"],
               ["Initial buy", devBuyNum > 0 ? sol(devBuyNum) : "None"],
-              ["Fragfun platform fee", "None"],
+              ["Fragfun platform fee", "None on launch & trades"],
+              [
+                "Creator fees (from every trade)",
+                prepared?.preview?.creatorFeeSplit
+                  ? `${prepared.preview.creatorFeeSplit.creatorBps / 100}% you · ${prepared.preview.creatorFeeSplit.platformBps / 100}% Fragfun`
+                  : "100% you",
+              ],
               [
                 "Estimated network + priority fee",
                 prepared?.preview
@@ -549,7 +575,15 @@ export function CreateFlow() {
           </dl>
           <p className="text-xs text-ff-muted">
             The total includes account rent for the new token, its bonding curve and your token account, any initial buy, and Pump.fun&apos;s own
-            protocol fees on that buy. Pump.fun charges trading fees on every trade; Fragfun adds none.
+            protocol fees on that buy. Fragfun adds no launch or trading fee.
+            {prepared?.preview?.creatorFeeSplit && (
+              <>
+                {" "}
+                Pump.fun pays a creator fee on every trade of your token. You approve two transactions together: the launch, and a split
+                that sends {prepared.preview.creatorFeeSplit.creatorBps / 100}% of those creator fees to you and{" "}
+                {prepared.preview.creatorFeeSplit.platformBps / 100}% to Fragfun. The split is locked on-chain and can&apos;t be changed later.
+              </>
+            )}
           </p>
 
           {prepared?.preview && (
@@ -654,6 +688,39 @@ export function CreateFlow() {
                 </a>
               )}
             </div>
+            {prepared?.preview?.creatorFeeSplit && (
+              <div className="rounded-2xl border border-white/[0.07] bg-white/[0.025] px-3 py-2.5 text-xs text-white/60">
+                {feeShareDone ? (
+                  <span className="text-ff-green">Creator fee split active.</span>
+                ) : feeShareSent ? (
+                  "Creator fee split is activating. Track it and claim fees from your dashboard."
+                ) : (
+                  <div className="flex items-center justify-between gap-3">
+                    <span>One more approval activates your creator fee split.</span>
+                    <Button
+                      size="sm"
+                      className="h-8 rounded-full px-3"
+                      disabled={feeShareBusy}
+                      onClick={async () => {
+                        setFeeShareBusy(true);
+                        try {
+                          const r = await api<{ txId: string; transaction: string }>(`/api/tokens/${attempt.mint}/fee-share`, { method: "POST", json: {} });
+                          const s = await signSubmitAndTrack(wallet, r.txId, r.transaction);
+                          if (s.status === "confirmed") setFeeShareDone(true);
+                          else if (s.error) toast.error(s.error);
+                        } catch (e) {
+                          toast.error(friendlyWalletError(e));
+                        } finally {
+                          setFeeShareBusy(false);
+                        }
+                      }}
+                    >
+                      {feeShareBusy && <Loader2 className="animate-spin" />} Activate
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
           <div className="mt-6 flex justify-center gap-2">
             <Link href={`/clip/${attempt.clipId}`} className={cn(buttonVariants(), "h-10 rounded-full px-5 font-semibold")}>

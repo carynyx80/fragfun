@@ -47,6 +47,16 @@
   submitted once (atomic status flip).
 - Only tokens launched (and verified) through Fragfun can be traded in the app.
 
+## Creator fees
+
+- Split (new launches): `sweepCreatorFeeInstruction` + `createFeeSharingConfig` + `updateFeeShares` (creator 9000 bps /
+  company 1000 bps), one 966-byte transaction signed by the creator, sent after the launch confirms.
+- Claim: split coins → `buildDistributeCreatorFeesInstructions` (pays every shareholder); other coins →
+  `collectCoinCreatorFeeInstructions` (creator vault).
+- Verified on mainnet by simulation (`npx tsx scripts/verify-fee-share.ts` and `... zero`): split succeeds for a coin with
+  pending creator fees and one without; direct-vault claim succeeds. Not yet simulated: a payout for a coin that already
+  has a split (no such live coin was found to test against); the first split launch will exercise it.
+
 ## Verification evidence (all read-only — nothing was broadcast)
 
 `npm run verify:pump` (mainnet, `https://api.mainnet-beta.solana.com`, simulated payer = a funded public wallet,

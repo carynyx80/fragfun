@@ -22,9 +22,16 @@ signer is only accepted if its public key equals `COMPANY_WALLET_ADDRESS`; error
 - **Treasury tracking** — `/admin` → "Company treasury": live mainnet balance, recent transactions (Solscan links),
   RPC cluster verification (genesis hash), signer status and sponsorship status. API: `GET /api/admin/treasury`
   (admin only, read-only RPC, cached 30 s).
-- **Receiving revenue** — the address is published at `GET /api/platform` and configured centrally. Fragfun charges
-  **no platform fee** today and moves **no user funds** to this wallet. Any future revenue (for example a Pump.fun
-  creator-fee share or a disclosed platform fee) needs a product decision and explicit approval before it is built.
+- **Receiving revenue (creator-fee split, approved 2026-11-21: 10%)** — Fragfun charges no fee on launches or trades.
+  For new launches, the creator signs a second transaction (in the same wallet prompt when the wallet supports
+  `signAllTransactions`) that sets the coin's Pump.fun fee-sharing split: **90% creator / 10% company wallet**
+  (`PLATFORM_CREATOR_FEE_BPS=1000`). It runs `sweep_creator_fee` → `create_fee_sharing_config` → `update_fee_shares`,
+  is sent right after the launch is verified, and is locked on-chain afterwards. The company wallet is only named in
+  the split data; it never signs and is never debited. Payouts happen when anyone distributes the coin's fees (creators
+  use the Claim button in their dashboard), which pays both shareholders in one transaction.
+  - Not enforceable without a custom program: a creator can decline the second signature. The token then shows
+    "Split not active" in their dashboard with an Activate button; `tokens.fee_share_status` tracks it.
+  - Tokens launched before this change keep 100% of creator fees (`not_applicable`) and claim from their creator vault.
 - **Optional fee payer** — when sponsorship is enabled, launch and trade transactions use the company wallet as the
   Solana fee payer:
   - the transaction guard requires the company to be the fee payer **only**: it may not appear in any instruction, so

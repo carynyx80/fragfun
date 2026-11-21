@@ -38,7 +38,15 @@ export default function TermsPage() {
       <h2>7. Moderation and suspension</h2>
       <p>We may hide content or suspend accounts that violate these terms. Administrators cannot access or move funds in your wallet.</p>
       <h2>8. Fees</h2>
-      <p>Fragfun currently charges no platform fee. Solana network fees and Pump.fun protocol fees apply and are shown before you sign.</p>
+      <p>
+        Fragfun charges no fee on launches or trades. Solana network fees and Pump.fun protocol fees apply and are shown before you sign.
+      </p>
+      <p>
+        Pump.fun pays a creator fee on every trade of a token. For tokens launched through Fragfun, the creator approves an on-chain split
+        at launch: 90% of those creator fees go to the creator and 10% to Fragfun&apos;s company wallet
+        (HLdg6LmRZi6Xfe5WgGLRPCXpr6auR1uodt4D3GotkhF8). The split is shown before signing, is recorded on-chain by Pump.fun&apos;s fee-sharing
+        program, and cannot be changed afterwards. Creators claim their share from their Fragfun dashboard or any compatible tool.
+      </p>
     </article>
   );
 }

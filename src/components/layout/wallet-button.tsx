@@ -51,10 +51,10 @@ export function WalletButton({ compact = false }: { compact?: boolean }) {
           {publicEnv.network === "devnet" ? "Devnet" : "Solana mainnet"} · {shortAddr(user.wallet, 5)}
         </DropdownMenuLabel>
         <DropdownMenuItem onClick={() => router.push(`/profile/${user.wallet}`)}>
-          <User /> Profile & dashboard
+          <User /> My profile & earnings
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => router.push("/settings")}>
-          <Settings /> Settings
+          <Settings /> Edit profile
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => {

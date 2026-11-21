@@ -48,6 +48,9 @@ const schema = z.object({
     .enum(["true", "false", "1", "0"])
     .optional()
     .transform((v) => v === "true" || v === "1"),
+  // Share of each new token's Pump.fun creator fees routed to COMPANY_WALLET_ADDRESS via Pump fee
+  // sharing (basis points; 1000 = 10%). Locked on-chain per token at launch. 0 disables.
+  PLATFORM_CREATOR_FEE_BPS: z.coerce.number().int().min(0).max(5000).default(1000),
   SPONSOR_MAX_FEE_LAMPORTS_PER_TX: z.coerce.number().int().positive().default(100_000),
   SPONSOR_MAX_TX_PER_DAY: z.coerce.number().int().nonnegative().default(200),
   SPONSOR_MAX_TX_PER_USER_PER_DAY: z.coerce.number().int().nonnegative().default(5),

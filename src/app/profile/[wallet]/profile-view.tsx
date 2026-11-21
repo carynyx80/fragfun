@@ -13,8 +13,8 @@ import { Avatar } from "@/components/common/avatar";
 import { ClipGrid } from "@/components/clip/clip-card";
 import { EmptyState, ErrorState } from "@/components/common/empty-state";
 import { ReportButton } from "@/components/clip/engagement";
+import { CreatorFeesPanel } from "@/components/market/creator-fees";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Button } from "@/components/ui/button";
 import { compact, shortAddr, timeAgo } from "@/lib/format";
 import { explorerTxUrl } from "@/lib/public-env";
 import { fromBaseUnits } from "@/lib/validation";
@@ -178,7 +178,7 @@ export function ProfileView({ wallet }: { wallet: string }) {
   if (q.isLoading) return <Skeleton className="h-40 rounded-2xl bg-white/[0.03]" />;
   if (q.isError) {
     if (q.error instanceof ClientApiError && q.error.status === 404) {
-      if (isOwner) return <div className="space-y-6"><p className="text-ff-muted">Your profile is ready.</p><Dashboard /></div>;
+      if (isOwner) return <div className="space-y-6"><p className="text-ff-muted">Your profile is ready.</p><CreatorFeesPanel /><Dashboard /></div>;
       return <EmptyState title="Creator not found" body="This wallet hasn't joined Fragfun yet." action={{ href: "/explore", label: "Explore" }} />;
     }
     return <ErrorState message="Could not load profile." onRetry={() => void q.refetch()} />;
@@ -228,10 +228,15 @@ export function ProfileView({ wallet }: { wallet: string }) {
         </div>
         <div className="flex gap-2">
           {isOwner ? (
-            <Link href="/settings">
-              <Button variant="outline" className="h-9 rounded-full border-ff-border">
-                Edit profile
-              </Button>
+            <Link
+              href="/settings"
+              className={cn(
+                "inline-flex h-10 items-center rounded-full px-5 text-sm",
+                profile.username && profile.avatarUrl ? "btn-ghost" : "btn-glow font-semibold",
+              )}
+              data-testid="edit-profile"
+            >
+              {profile.username && profile.avatarUrl ? "Edit profile" : "Complete your profile"}
             </Link>
           ) : (
             <ReportButton targetType="profile" targetId={profile.wallet} />
@@ -239,7 +244,12 @@ export function ProfileView({ wallet }: { wallet: string }) {
         </div>
       </header>
 
-      {isOwner && <Dashboard />}
+      {isOwner && (
+        <div className="space-y-6">
+          <CreatorFeesPanel />
+          <Dashboard />
+        </div>
+      )}
 
       {profile.launches.length > 0 && (
         <section>

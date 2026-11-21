@@ -7,7 +7,10 @@ export const GET = route(async () => {
   return {
     network: e.SOLANA_NETWORK,
     companyWallet: e.COMPANY_WALLET_ADDRESS || null,
-    platformFee: "none",
+    platformFee: "none on launches or trades",
+    creatorFeeSplit: e.PLATFORM_CREATOR_FEE_BPS && e.COMPANY_WALLET_ADDRESS
+      ? { platformBps: e.PLATFORM_CREATOR_FEE_BPS, creatorBps: 10_000 - e.PLATFORM_CREATOR_FEE_BPS, recipient: e.COMPANY_WALLET_ADDRESS }
+      : null,
     feeSponsorship: e.FEATURE_FEE_SPONSORSHIP,
   };
 });

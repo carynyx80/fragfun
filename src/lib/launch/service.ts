@@ -6,6 +6,7 @@ import { err } from "@/lib/api";
 import { logEvent, notify } from "@/lib/log";
 import { withRpc, rpc } from "@/lib/solana/connection";
 import { chooseFeePayer, cosignAsFeePayer } from "@/lib/solana/company";
+import { platformSplit, prepareFeeShareTx, sendPendingFeeShare, submitPrepared } from "@/lib/fees/service";
 import { buildLaunchTransaction, LAMPORTS_PER_SOL } from "@/lib/solana/pump-core";
 import { inspectPreparedTransaction, messageHash, verifySignedMatchesPrepared } from "@/lib/solana/tx-guard";
 import { isBlockhashExpired, verifyLaunch } from "@/lib/solana/verify-launch";
@@ -208,9 +209,20 @@ export async function prepareLaunch(user: { id: string; wallet: string }, input:
     throw e;
   });
 
+  // Second transaction: the creator-fee split (creator / Fragfun), sent right after the launch confirms.
+  const split = platformSplit();
+  const feeShare = split
+    ? await prepareFeeShareTx(user, { id: row.token_id, mint_address: mint.toBase58() }).catch(async (e: unknown) => {
+        await logEvent("error", "launch:fee-share", e instanceof Error ? e.message : String(e), { attempt: row.id });
+        return null;
+      })
+    : null;
+
   return {
     ...(await attemptPayload(row)),
+    feeShare: feeShare ? { txId: feeShare.txId, transaction: feeShare.transaction } : null,
     preview: {
+      creatorFeeSplit: split ? { creatorBps: split.creatorBps, platformBps: split.platformBps, recipient: split.recipient } : null,
       imageUrl,
       metadataUri,
       expectedTokens: built.expectedTokens,
@@ -275,8 +287,17 @@ export async function cancelLaunch(userId: string, attemptId: string) {
   return attemptPayload(await getAttempt(userId, attemptId));
 }
 
-export async function submitLaunch(user: { id: string; wallet: string }, attemptId: string, signedBase64: string) {
+export async function submitLaunch(
+  user: { id: string; wallet: string },
+  attemptId: string,
+  signedBase64: string,
+  feeShare?: { txId: string; signedTransaction: string },
+) {
   const a = await getAttempt(user.id, attemptId);
+  // Store the signed fee-split transaction first; it is broadcast once the launch is verified on-chain.
+  if (feeShare) await submitPrepared(user, feeShare.txId, feeShare.signedTransaction).catch((e: unknown) =>
+    logEvent("warn", "launch:fee-share", e instanceof Error ? e.message : String(e), { attempt: attemptId }),
+  );
   if (a.status !== "awaiting_signature") return attemptPayload(a); // duplicate submit: idempotent
   let signed: VersionedTransaction;
   try {
@@ -344,6 +365,7 @@ export async function reconcileAttempt(a: AttemptRow) {
   if (v.status === "confirmed") {
     await setStatus(a, transition(a.status, { type: "verified" }), { code: undefined });
     await q("update token_launch_attempts set error_code = null, error_message = null where id = $1", [a.id]);
+    await sendPendingFeeShare(a.token_id).catch((e: unknown) => logEvent("error", "launch:fee-share", String(e), { attempt: a.id }));
     await notify(a.creator_id, "launch_confirmed", `$${token.symbol} is live on-chain`, `${token.name} launched successfully.`, `/clip/${token.clip_id}`, `launch:${a.id}`);
     await logEvent("info", "launch", "Launch confirmed", { mint: token.mint_address, signature: a.transaction_signature, slot: v.slot });
   } else if (v.status === "failed" || v.status === "mismatch") {

@@ -27,6 +27,7 @@ import {
   bondingCurveMarketCap,
   getBuyTokenAmountFromSolAmount,
   getSellSolAmountFromTokenAmount,
+  feeSharingConfigPda,
   type BondingCurve,
 } from "@pump-fun/pump-sdk";
 import { OnlinePumpAmmSdk, PUMP_AMM_SDK, buyQuoteInput, sellBaseInput } from "@pump-fun/pump-sdk/swap";
@@ -193,7 +194,7 @@ export async function fetchOnchainMarket(conn: Connection, mint: PublicKey): Pro
     pool: null,
     liquiditySol: null,
   };
-  if (!curveInfo) return base;
+  if (!curveInfo || curveInfo.data.length < 49) return base;
   const bc = PUMP_SDK.decodeBondingCurve(curveInfo);
   base.creator = bc.creator.toBase58();
   base.complete = bc.complete;
@@ -283,7 +284,7 @@ export async function buildTradeTransaction(
 
   const sdk = new OnlinePumpSdk(conn);
   const curveInfo = await conn.getAccountInfo(bondingCurvePda(p.mint));
-  if (!curveInfo) throw new TradeUnavailableError("unsupported", "This token is not a Pump.fun bonding-curve token.");
+  if (!curveInfo || curveInfo.data.length < 49) throw new TradeUnavailableError("unsupported", "This token is not a Pump.fun bonding-curve token.");
   const bcPeek = PUMP_SDK.decodeBondingCurve(curveInfo);
 
   // ---------- bonding curve
@@ -465,4 +466,112 @@ export async function fetchBalances(conn: Connection, owner: PublicKey, mint?: P
     }
   }
   return { lamports, tokenAmount };
+}
+
+// ------------------------------------------------------------------ creator fees (Pump fee sharing)
+
+export interface FeeShare {
+  address: PublicKey;
+  shareBps: number;
+}
+
+/**
+ * Builds the second launch transaction: create the coin's Pump fee-sharing config and set the
+ * split (e.g. creator 9000 bps / company 1000 bps). Signed by the creator. Must land after the
+ * create_v2 transaction (the bonding curve has to exist). Once set, the split is locked on-chain.
+ */
+export async function buildFeeShareTransaction(
+  conn: Connection,
+  p: { mint: PublicKey; creator: PublicKey; shares: FeeShare[]; priorityMicroLamports: number; feePayer?: PublicKey },
+) {
+  const total = p.shares.reduce((a, s) => a + s.shareBps, 0);
+  if (total !== 10_000) throw new Error("Fee shares must total 10,000 bps");
+  const units = 250_000;
+  const ixs = [
+    ...computeBudget(units, p.priorityMicroLamports),
+    // Pay out any creator fees already sitting on the curve to the creator (pump refuses to change the
+    // creator while that bucket is non-empty — 6095 CreatorFeesNotSwept). Bots often trade in the first
+    // seconds, so this is always included. Permissionless; the fees go to the creator's own vault.
+    await PUMP_SDK.sweepCreatorFeeInstruction({ payer: p.feePayer ?? p.creator, mint: p.mint, creator: p.creator, quoteMint: NATIVE_MINT }),
+    await PUMP_SDK.createFeeSharingConfig({ creator: p.creator, mint: p.mint, pool: null }),
+    await PUMP_SDK.updateFeeShares({
+      authority: p.creator,
+      mint: p.mint,
+      currentShareholders: [p.creator],
+      newShareholders: p.shares,
+      bondingCurveComplete: false,
+    }),
+  ];
+  const prepared = await compile(conn, p.feePayer ?? p.creator, ixs);
+  return { ...prepared, fees: estimateFees(1, units, p.priorityMicroLamports) };
+}
+
+export interface CreatorFeeState {
+  mint: string;
+  mode: "shared" | "direct" | "unknown";
+  /** Lamports currently waiting to be paid out for THIS coin (shared mode). */
+  distributableLamports: string | null;
+  /** Minimum the program requires before a distribution can run (shared mode). */
+  minimumLamports: string | null;
+  canClaim: boolean;
+  /** Direct mode: the creator vault is per creator wallet and covers ALL of their direct-mode coins. */
+  creatorVaultLamports: string | null;
+  shareholders: { address: string; shareBps: number }[];
+  graduated: boolean;
+}
+
+export async function fetchCreatorFeeState(conn: Connection, mint: PublicKey, creatorWallet: PublicKey): Promise<CreatorFeeState> {
+  const sdk = new OnlinePumpSdk(conn);
+  const curveInfo = await conn.getAccountInfo(bondingCurvePda(mint));
+  const base: CreatorFeeState = {
+    mint: mint.toBase58(),
+    mode: "unknown",
+    distributableLamports: null,
+    minimumLamports: null,
+    canClaim: false,
+    creatorVaultLamports: null,
+    shareholders: [],
+    graduated: false,
+  };
+  if (!curveInfo || curveInfo.data.length < 49) return base;
+  const bc = PUMP_SDK.decodeBondingCurve(curveInfo);
+  base.graduated = bc.complete;
+  const sharingPda = feeSharingConfigPda(mint);
+  if (bc.creator.equals(sharingPda)) {
+    base.mode = "shared";
+    const r = await sdk.getMinimumDistributableFee(mint, creatorWallet);
+    base.distributableLamports = r.distributableFees.toString();
+    base.minimumLamports = r.minimumRequired.toString();
+    base.canClaim = r.canDistribute;
+    const cfgInfo = await conn.getAccountInfo(sharingPda);
+    if (cfgInfo) {
+      const cfg = PUMP_SDK.decodeSharingConfig(cfgInfo);
+      base.shareholders = cfg.shareholders.map((s) => ({ address: s.address.toBase58(), shareBps: s.shareBps }));
+    }
+    return base;
+  }
+  if (bc.creator.equals(creatorWallet)) {
+    base.mode = "direct";
+    const bal = await sdk.getCreatorVaultBalanceBothPrograms(creatorWallet);
+    base.creatorVaultLamports = bal.toString();
+    base.canClaim = !bal.isZero();
+  }
+  return base;
+}
+
+/** Claim: distribute a shared coin's fees to all shareholders, or collect a direct-mode creator vault. */
+export async function buildClaimTransaction(conn: Connection, p: { mint: PublicKey; creatorWallet: PublicKey; priorityMicroLamports: number }) {
+  const sdk = new OnlinePumpSdk(conn);
+  const state = await fetchCreatorFeeState(conn, p.mint, p.creatorWallet);
+  let ixs: TransactionInstruction[];
+  if (state.mode === "shared") {
+    ixs = (await sdk.buildDistributeCreatorFeesInstructions(p.mint, { payer: p.creatorWallet })).instructions;
+  } else if (state.mode === "direct") {
+    ixs = await sdk.collectCoinCreatorFeeInstructions(p.creatorWallet, p.creatorWallet);
+  } else {
+    throw new Error("This wallet is not the creator of this coin.");
+  }
+  const units = 300_000;
+  const prepared = await compile(conn, p.creatorWallet, [...computeBudget(units, p.priorityMicroLamports), ...ixs]);
+  return { ...prepared, state, fees: estimateFees(1, units, p.priorityMicroLamports) };
 }

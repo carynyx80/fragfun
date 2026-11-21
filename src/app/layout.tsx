@@ -6,6 +6,7 @@ import { Navbar, MobileNav } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { Suspense } from "react";
 import { Logo } from "@/components/layout/logo";
+import { ProfileNudge } from "@/components/layout/profile-nudge";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
@@ -41,6 +42,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <Footer />
           <Suspense fallback={null}>
             <MobileNav />
+            <ProfileNudge />
           </Suspense>
         </Providers>
       </body>
